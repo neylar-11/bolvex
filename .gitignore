@@ -1,0 +1,13 @@
+nbproject/private/
+build/
+dist/
+nbdist/
+.nb-gradle/
+*.class
+*.jar
+.gradle/
+local.properties
+.DS_Store
+Thumbs.db
+*.iml
+.idea/
