@@ -14,7 +14,10 @@ public class Main extends SimpleApplication {
         // Configuraciones básicas de visualización
         setDisplayStatView(false);
         setDisplayFps(false);
-
+        
+        // DEBUG GLOBAL
+        new Coordenadas(this);
+        
         // Iniciamos directamente en el menú
         stateManager.attach(new MenuState());
     }
