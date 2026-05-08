@@ -3,8 +3,14 @@ package com.mygame;
 import com.jme3.app.Application;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.BaseAppState;
+import com.jme3.material.Material;
+import com.jme3.material.RenderState;
+import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
-import com.jme3.ui.Picture;
+import com.jme3.renderer.queue.RenderQueue;
+import com.jme3.scene.Geometry;
+import com.jme3.scene.shape.Quad;
+import com.jme3.texture.Texture;
 
 import java.util.ArrayList;
 
@@ -15,130 +21,169 @@ public class Mapa1State extends BaseAppState {
     // =========================
     // MAPA PRINCIPAL
     // =========================
-    private Picture fondoMapa;
+    private Geometry geoMapa;
     private final float IMG_ANCHO_ORIGINAL = 3584f;
     private final float IMG_ALTO_ORIGINAL  = 240f;
 
     // =========================
     // FONDO TILEADO
     // =========================
-    private ArrayList<Picture> tilesFondo = new ArrayList<>();
+    private ArrayList<Geometry> tilesFondo = new ArrayList<>();
     private final float BG_ANCHO_ORIGINAL = 512f;
     private final float BG_ALTO_ORIGINAL  = 240f;
+    private float bgAncho;
+    private float bgAlto;
 
-    // =========================
+    // QUÉ TAN LENTO SE MUEVE EL FONDO
+    private final float PARALLAX = 0.3f;
+
     // ZOOM
-    // =========================
     private final float ZOOM = .9f;
 
-    // TAMAÑO FINAL
+    // TAMAÑO FINAL DEL MAPA
     private float anchoFinal;
     private float altoFinal;
 
-    // X DEL JUGADOR
-    private float jugadorX = 0f;
+    // POSICIÓN X DE LA CÁMARA
+    private float camaraX = 0f;
 
     @Override
     protected void initialize(Application app) {
         this.app = (SimpleApplication) app;
 
         Camera cam = this.app.getCamera();
-        float pantallaAlto = cam.getHeight();
+        float pantallaAncho = cam.getWidth();
+        float pantallaAlto  = cam.getHeight();
 
         float escalaBase = pantallaAlto / IMG_ALTO_ORIGINAL;
 
         altoFinal  = IMG_ALTO_ORIGINAL  * escalaBase * ZOOM;
         anchoFinal = IMG_ANCHO_ORIGINAL * escalaBase * ZOOM;
-
-        // TAMAÑO DE CADA TILE DE FONDO
-        // (misma escala y zoom que el mapa)
-        float bgAncho = BG_ANCHO_ORIGINAL * escalaBase * ZOOM;
-        float bgAlto  = BG_ALTO_ORIGINAL  * escalaBase * ZOOM;
+        bgAncho    = BG_ANCHO_ORIGINAL  * escalaBase * ZOOM;
+        bgAlto     = BG_ALTO_ORIGINAL   * escalaBase * ZOOM;
 
         // =========================
-        // CALCULAR CUÁNTOS TILES
-        // SE NECESITAN PARA CUBRIR
-        // TODO EL ANCHO DEL MAPA
+        // CÁMARA ORTOGRÁFICA
         // =========================
-        int cantidadTiles = (int) Math.ceil(anchoFinal / bgAncho) + 1;
+        cam.setParallelProjection(true);
+        cam.setFrustum(
+                -1000f, 1000f,
+                -pantallaAncho / 2f,
+                 pantallaAncho / 2f,
+                 pantallaAlto  / 2f,
+                -pantallaAlto  / 2f
+        );
+        cam.setLocation(new Vector3f(
+                pantallaAncho / 2f,
+                pantallaAlto  / 2f,
+                500f
+        ));
+        this.app.getFlyByCamera().setEnabled(false);
+
+        // =========================
+        // FONDO TILEADO  (Z = 0)
+        // =========================
+        int cantidadTiles = (int) Math.ceil(anchoFinal / bgAncho) + 2;
+        float posYFondo   = (pantallaAlto - bgAlto) / 2f;
 
         for (int i = 0; i < cantidadTiles; i++) {
 
-            Picture tile = new Picture("FondoTile_" + i);
-            tile.setImage(
-                    app.getAssetManager(),
-                    "Scenes/Fondo Mapa1.3.png",
-                    true
-            );
-            tile.setWidth(bgAncho);
-            tile.setHeight(bgAlto);
+            Quad quad = new Quad(bgAncho, bgAlto);
+            Geometry tile = new Geometry("FondoTile_" + i, quad);
 
-            // ACOMODAR EN FILA HORIZONTAL
-            // CENTRADO VERTICAL igual que el mapa
-            float offsetY = (bgAlto - pantallaAlto) / 2f;
-            tile.setPosition(i * bgAncho, -offsetY);
+            Material mat = new Material(
+                    app.getAssetManager(),
+                    "Common/MatDefs/Misc/Unshaded.j3md"
+            );
+            Texture tex = app.getAssetManager()
+                    .loadTexture("Scenes/Fondo Mapa1.3.png");
+            mat.setTexture("ColorMap", tex);
+
+            tile.setMaterial(mat);
+            tile.setLocalTranslation(i * bgAncho, posYFondo, 0f);
 
             tilesFondo.add(tile);
         }
 
         // =========================
-        // MAPA PRINCIPAL
+        // MAPA PRINCIPAL  (Z = 1)
+        // CON TRANSPARENCIA ALPHA
+        // para que se vea el fondo
+        // a través de las zonas
+        // transparentes del PNG
         // =========================
-        fondoMapa = new Picture("Mapa1");
-        fondoMapa.setImage(
-                app.getAssetManager(),
-                "Interface/Mapa1.1.png",
-                true
-        );
-        fondoMapa.setWidth(anchoFinal);
-        fondoMapa.setHeight(altoFinal);
-        fondoMapa.setPosition(0, 0);
+        Quad quadMapa = new Quad(anchoFinal, altoFinal);
+        geoMapa = new Geometry("Mapa1", quadMapa);
 
-        this.app.getFlyByCamera().setEnabled(false);
+        Material matMapa = new Material(
+                app.getAssetManager(),
+                "Common/MatDefs/Misc/Unshaded.j3md"
+        );
+        Texture texMapa = app.getAssetManager()
+                .loadTexture("Interface/Mapa1.1.png");
+        matMapa.setTexture("ColorMap", texMapa);
+
+        // ACTIVAR TRANSPARENCIA ALPHA
+        matMapa.getAdditionalRenderState()
+               .setBlendMode(RenderState.BlendMode.Alpha);
+
+        geoMapa.setMaterial(matMapa);
+
+        // BUCKET TRANSPARENTE para que JME
+        // respete el orden de renderizado
+        geoMapa.setQueueBucket(RenderQueue.Bucket.Transparent);
+
+        float posYMapa = (pantallaAlto - altoFinal) / 2f;
+        geoMapa.setLocalTranslation(0f, posYMapa, 1f);
 
         System.out.println("Mapa cargado | Zoom: x" + ZOOM);
         System.out.println("Tiles de fondo: " + cantidadTiles);
     }
 
-    public void actualizarCamara(float xJugador) {
-        this.jugadorX = xJugador;
-    }
-
-    @Override
-    public void update(float tpf) {
+    // =========================
+    // MOVER LA CÁMARA
+    // =========================
+    public void moverCamara(float xJugador) {
 
         Camera cam = app.getCamera();
         float pantallaAncho = cam.getWidth();
         float pantallaAlto  = cam.getHeight();
 
-        // SCROLL DEL MAPA
-        float offsetX = jugadorX - (pantallaAncho / 2f);
-        offsetX = Math.max(0, offsetX);
-        offsetX = Math.min(anchoFinal - pantallaAncho, offsetX);
+        camaraX = xJugador - (pantallaAncho / 2f);
+        camaraX = Math.max(0, camaraX);
+        camaraX = Math.min(anchoFinal - pantallaAncho, camaraX);
 
-        float offsetY = (altoFinal - pantallaAlto) / 2f;
+        // MOVER CÁMARA
+        cam.setLocation(new Vector3f(
+                camaraX + pantallaAncho / 2f,
+                pantallaAlto / 2f,
+                500f
+        ));
 
-        fondoMapa.setPosition(-offsetX, -offsetY);
+        // MOVER FONDO MÁS LENTO (parallax)
+        float posYFondo = (pantallaAlto - bgAlto) / 2f;
 
-        // EL FONDO NO SE MUEVE (posición fija)
+        for (int i = 0; i < tilesFondo.size(); i++) {
+            tilesFondo.get(i).setLocalTranslation(
+                    (i * bgAncho) + (camaraX * PARALLAX),
+                    posYFondo,
+                    0f
+            );
+        }
     }
 
     @Override
     protected void onEnable() {
-
-        // PRIMERO EL FONDO (queda detrás del mapa)
-        for (Picture tile : tilesFondo) {
-            app.getGuiNode().attachChild(tile);
+        for (Geometry tile : tilesFondo) {
+            app.getRootNode().attachChild(tile);
         }
-
-        // LUEGO EL MAPA (queda encima)
-        app.getGuiNode().attachChild(fondoMapa);
+        app.getRootNode().attachChild(geoMapa);
     }
 
     @Override
     protected void onDisable() {
-        fondoMapa.removeFromParent();
-        for (Picture tile : tilesFondo) {
+        geoMapa.removeFromParent();
+        for (Geometry tile : tilesFondo) {
             tile.removeFromParent();
         }
     }
