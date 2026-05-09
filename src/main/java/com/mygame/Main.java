@@ -15,20 +15,20 @@ public class Main extends SimpleApplication {
     @Override
     public void simpleInitApp() {
 
-        // CONFIGURACIONES BÁSICAS
         setDisplayStatView(false);
         setDisplayFps(false);
-
-        // DEBUG GLOBAL
-        new Coordenadas(this);
 
         // MAPA
         mapaState = new Mapa1State();
         stateManager.attach(mapaState);
 
-        // CONTROL DE CÁMARA
-        // (se crea después del mapa)
+        // CÁMARA (va antes que Coordenadas
+        // porque Coordenadas la necesita)
         camaraControl = new CamaraControl(this, mapaState);
+
+        // DEBUG: ahora recibe camaraControl
+        // para que las coords sean del mundo
+        new Coordenadas(this, camaraControl);
 
         // MENÚ
         stateManager.attach(new MenuState());
@@ -36,8 +36,6 @@ public class Main extends SimpleApplication {
 
     @Override
     public void simpleUpdate(float tpf) {
-
-        // MOVER CÁMARA CON FLECHAS / WASD
         if (camaraControl != null) {
             camaraControl.update(tpf);
         }
