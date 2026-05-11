@@ -3,35 +3,15 @@ package com.mygame;
 import com.jme3.math.Vector2f;
 import java.util.ArrayList;
 
-/**
- * ColisionMapa
- * ============
- * Detecta colisiones entre un AABB (rectángulo del jugador)
- * y los segmentos de línea del mapa capturados con Coordenadas.
- *
- * USO:
- *   ColisionMapa colision = new ColisionMapa(coordenadas);
- *
- *   // En el update del jugador:
- *   ColisionMapa.Resultado r = colision.resolver(posX, posY, anchoJugador, altoJugador);
- *   posX = r.posX;
- *   posY = r.posY;
- *   if (r.enPiso)   velocidadY = 0;  // dejó de caer
- *   if (r.enTecho)  velocidadY = 0;  // rebotó arriba
- *   if (r.enPared)  velocidadX = 0;  // chocó pared
- */
 public class ColisionMapa {
 
-    // ============================================================
-    // RESULTADO DE RESOLUCIÓN
-    // ============================================================
     public static class Resultado {
-        public float   posX;       // posición corregida X (esquina inferior izquierda)
-        public float   posY;       // posición corregida Y (esquina inferior izquierda)
-        public boolean enPiso;     // el jugador está parado sobre algo
-        public boolean enTecho;    // el jugador tocó techo
-        public boolean enParedIzq; // chocó pared a su izquierda
-        public boolean enParedDer; // chocó pared a su derecha
+        public float   posX;
+        public float   posY;
+        public boolean enPiso;
+        public boolean enTecho;
+        public boolean enParedIzq;
+        public boolean enParedDer;
 
         public Resultado(float x, float y) {
             posX = x;
@@ -39,15 +19,9 @@ public class ColisionMapa {
         }
     }
 
-    // ============================================================
-    // UMBRAL: ángulo para decidir si una línea es piso/techo o pared
-    // Si |dy/len| > UMBRAL_HORIZONTAL → es pared
-    // Si |dx/len| > UMBRAL_HORIZONTAL → es piso o techo
-    // ============================================================
-    private static final float UMBRAL_HORIZONTAL = 0.5f; // 45°
-
-    // Margen de penetración mínima para considerar colisión real
-    private static final float MARGEN = 2f;
+    // Margen sólo para el raycast de "¿hay piso cerca?"
+    // Las resoluciones de colisión NO usan margen — solo penetración real.
+    private static final float MARGEN_RAY = 6f;
 
     private ArrayList<ArrayList<Vector2f>> segmentos;
 
@@ -55,126 +29,43 @@ public class ColisionMapa {
         this.segmentos = coordenadas.getSegmentos();
     }
 
-    // Permite pasar los segmentos directamente si ya los tienes
     public ColisionMapa(ArrayList<ArrayList<Vector2f>> segmentos) {
         this.segmentos = segmentos;
     }
 
     // ============================================================
-    // RESOLVER COLISIONES
-    // posX, posY = esquina inferior izquierda del jugador
-    // ancho, alto = tamaño del AABB del jugador
+    // RESOLVER — dos pasadas:
+    //   1) Pisos y techos
+    //   2) Paredes
     // ============================================================
     public Resultado resolver(float posX, float posY,
                               float ancho, float alto) {
 
         Resultado res = new Resultado(posX, posY);
 
-        // AABB del jugador
-        float jIzq = posX;
-        float jDer = posX + ancho;
-        float jAbj = posY;          // Y crece hacia arriba en jME
-        float jArr = posY + alto;
-
+        // ── PASADA 1: PISOS Y TECHOS ──
         for (ArrayList<Vector2f> segmento : segmentos) {
             if (segmento.size() < 2) continue;
-
             for (int i = 0; i < segmento.size() - 1; i++) {
-
                 Vector2f p1 = segmento.get(i);
                 Vector2f p2 = segmento.get(i + 1);
+                float dx = Math.abs(p2.x - p1.x);
+                float dy = Math.abs(p2.y - p1.y);
+                if (dx <= dy) continue;
+                resolverPisoTecho(res, p1, p2, ancho, alto);
+            }
+        }
 
-                // Bounding box del segmento (con margen)
-                float sMinX = Math.min(p1.x, p2.x) - MARGEN;
-                float sMaxX = Math.max(p1.x, p2.x) + MARGEN;
-                float sMinY = Math.min(p1.y, p2.y) - MARGEN;
-                float sMaxY = Math.max(p1.y, p2.y) + MARGEN;
-
-                // Descarte rápido: si el AABB del jugador no toca
-                // el bounding box del segmento, saltamos
-                if (jDer < sMinX || jIzq > sMaxX ||
-                    jArr < sMinY || jAbj > sMaxY) {
-                    continue;
-                }
-
-                // ------------------------------------------------
-                // Calcular dirección y normal del segmento
-                // ------------------------------------------------
-                float dx  = p2.x - p1.x;
-                float dy  = p2.y - p1.y;
-                float len = (float) Math.sqrt(dx * dx + dy * dy);
-                if (len == 0) continue;
-
-                float dirX = dx / len;
-                float dirY = dy / len;
-
-                // Normal perpendicular (apunta "hacia dentro" del mapa)
-                // Normal = (-dy, dx) normalizada → ya está normalizada
-                float normX = -dirY;
-                float normY =  dirX;
-
-                // Centro del AABB del jugador
-                float cX = res.posX + ancho / 2f;
-                float cY = res.posY + alto  / 2f;
-
-                // ------------------------------------------------
-                // Proyectar centro del jugador sobre la línea
-                // para obtener distancia con signo a la línea
-                // ------------------------------------------------
-                // Vector desde p1 al centro
-                float vX = cX - p1.x;
-                float vY = cY - p1.y;
-
-                // Distancia con signo a la línea (positivo = lado de la normal)
-                float dist = vX * normX + vY * normY;
-
-                // Radio del AABB proyectado sobre la normal
-                float radioX = (ancho / 2f) * Math.abs(normX);
-                float radioY = (alto  / 2f) * Math.abs(normY);
-                float radio  = radioX + radioY;
-
-                // Penetración: cuánto se metió el jugador en la línea
-                float penetracion = radio - Math.abs(dist);
-
-                if (penetracion <= 0) continue; // no hay colisión
-
-                // ------------------------------------------------
-                // Determinar tipo de superficie y empujar
-                // ------------------------------------------------
-                // Si la normal apunta más en Y → piso o techo
-                // Si la normal apunta más en X → pared
-                float signo = (dist >= 0) ? 1f : -1f;
-
-                if (Math.abs(normY) >= UMBRAL_HORIZONTAL) {
-                    // PISO o TECHO
-                    float empuje = penetracion * signo;
-                    res.posY += empuje;
-
-                    if (signo > 0) {
-                        // Normal apunta hacia arriba → jugador está SOBRE la línea
-                        res.enPiso = true;
-                    } else {
-                        // Normal apunta hacia abajo → jugador tocó TECHO
-                        res.enTecho = true;
-                    }
-
-                } else {
-                    // PARED
-                    float empuje = penetracion * signo;
-                    res.posX += empuje;
-
-                    if (signo > 0) {
-                        res.enParedDer = true;
-                    } else {
-                        res.enParedIzq = true;
-                    }
-                }
-
-                // Actualizar AABB con la posición corregida
-                jIzq = res.posX;
-                jDer = res.posX + ancho;
-                jAbj = res.posY;
-                jArr = res.posY + alto;
+        // ── PASADA 2: PAREDES ──
+        for (ArrayList<Vector2f> segmento : segmentos) {
+            if (segmento.size() < 2) continue;
+            for (int i = 0; i < segmento.size() - 1; i++) {
+                Vector2f p1 = segmento.get(i);
+                Vector2f p2 = segmento.get(i + 1);
+                float dx = Math.abs(p2.x - p1.x);
+                float dy = Math.abs(p2.y - p1.y);
+                if (dy <= dx) continue;
+                resolverPared(res, p1, p2, ancho, alto);
             }
         }
 
@@ -182,42 +73,136 @@ public class ColisionMapa {
     }
 
     // ============================================================
-    // HELPER: ¿hay piso debajo del jugador?
-    // Útil para saber si puede saltar
-    // Lanza un rayo hacia abajo desde el centro del jugador
+    // PISO / TECHO
+    //
+    // Cambios clave vs versión anterior:
+    //  • Sin MARGEN en la detección — solo resuelve si hay penetración real.
+    //  • enPiso se activa solo cuando la base del jugador cruzó el segmento
+    //    (pAbj < segY), no cuando está "cerca".
+    //  • enTecho igual: solo si la cabeza cruzó (pArr > segY).
+    //  • El jugador debe solapar en X con el segmento (sin margen extra).
+    // ============================================================
+    private void resolverPisoTecho(Resultado res,
+                                   Vector2f p1, Vector2f p2,
+                                   float ancho, float alto) {
+
+        float pIzq = res.posX;
+        float pDer = res.posX + ancho;
+        float pAbj = res.posY;          // base del jugador
+        float pArr = res.posY + alto;   // cabeza del jugador
+        float pCX  = res.posX + ancho / 2f;
+
+        float sMinX = Math.min(p1.x, p2.x);
+        float sMaxX = Math.max(p1.x, p2.x);
+
+        // El AABB del jugador debe solapar en X con el segmento
+        if (pDer <= sMinX || pIzq >= sMaxX) return;
+
+        // Interpolamos Y en el centro del jugador (o en el extremo más cercano)
+        float cx = Math.max(sMinX, Math.min(sMaxX, pCX));
+        float segY = interpolarY(p1, p2, cx);
+
+        // ── PISO: el jugador viene de arriba y su base penetró ──
+        // segY está dentro de la franja vertical del jugador
+        if (segY >= pAbj && segY <= pArr) {
+            // ¿El centro del jugador está por encima del segmento? → piso
+            float pCY = res.posY + alto / 2f;
+            if (pCY >= segY) {
+                res.posY   = segY;
+                res.enPiso = true;
+            } else {
+                // Centro por debajo → techo
+                res.posY    = segY - alto;
+                res.enTecho = true;
+            }
+        }
+    }
+
+    // ============================================================
+    // PARED
+    //
+    // Cambios clave:
+    //  • Sin MARGEN — solo resuelve penetración real.
+    //  • El solapamiento en Y se comprueba sin margen.
+    //  • enParedIzq / enParedDer solo si segX está dentro del AABB.
+    // ============================================================
+    private void resolverPared(Resultado res,
+                               Vector2f p1, Vector2f p2,
+                               float ancho, float alto) {
+
+        float pIzq = res.posX;
+        float pDer = res.posX + ancho;
+        float pAbj = res.posY;
+        float pArr = res.posY + alto;
+        float pCX  = res.posX + ancho / 2f;
+        float pCY  = res.posY + alto  / 2f;
+
+        float sMinY = Math.min(p1.y, p2.y);
+        float sMaxY = Math.max(p1.y, p2.y);
+
+        // El AABB del jugador debe solapar en Y con el segmento
+        if (pArr <= sMinY || pAbj >= sMaxY) return;
+
+        float cy   = Math.max(sMinY, Math.min(sMaxY, pCY));
+        float segX = interpolarX(p1, p2, cy);
+
+        // segX debe estar dentro del AABB horizontal del jugador
+        if (segX < pIzq || segX > pDer) return;
+
+        if (pCX >= segX) {
+            // Pared a la izquierda del jugador → empujar hacia la derecha
+            res.posX       = segX;
+            res.enParedIzq = true;
+        } else {
+            // Pared a la derecha del jugador → empujar hacia la izquierda
+            res.posX       = segX - ancho;
+            res.enParedDer = true;
+        }
+    }
+
+    // ============================================================
+    // HELPERS DE INTERPOLACIÓN
+    // ============================================================
+    private float interpolarY(Vector2f p1, Vector2f p2, float x) {
+        float dx = p2.x - p1.x;
+        if (Math.abs(dx) < 0.001f) return (p1.y + p2.y) / 2f;
+        float t = (x - p1.x) / dx;
+        t = Math.max(0f, Math.min(1f, t));
+        return p1.y + t * (p2.y - p1.y);
+    }
+
+    private float interpolarX(Vector2f p1, Vector2f p2, float y) {
+        float dy = p2.y - p1.y;
+        if (Math.abs(dy) < 0.001f) return (p1.x + p2.x) / 2f;
+        float t = (y - p1.y) / dy;
+        t = Math.max(0f, Math.min(1f, t));
+        return p1.x + t * (p2.x - p1.x);
+    }
+
+    // ============================================================
+    // HELPER: ¿hay piso debajo del jugador dentro de `distancia`?
+    // Esto SÍ usa margen porque es un raycast predictivo.
     // ============================================================
     public boolean hayPisoAbajo(float posX, float posY,
                                 float ancho, float alto,
                                 float distancia) {
-
-        float rayX  = posX + ancho / 2f; // centro horizontal
-        float rayY0 = posY;              // base del jugador
-        float rayY1 = posY - distancia;  // hacia abajo
+        float rayX  = posX + ancho / 2f;
+        float rayY0 = posY;
+        float rayY1 = posY - distancia;
 
         for (ArrayList<Vector2f> segmento : segmentos) {
             if (segmento.size() < 2) continue;
-
             for (int i = 0; i < segmento.size() - 1; i++) {
                 Vector2f p1 = segmento.get(i);
                 Vector2f p2 = segmento.get(i + 1);
+                if (Math.abs(p2.x - p1.x) <= Math.abs(p2.y - p1.y)) continue;
 
-                // Solo líneas aproximadamente horizontales
-                float dy = Math.abs(p2.y - p1.y);
-                float dx = Math.abs(p2.x - p1.x);
-                if (dy > dx) continue; // más vertical que horizontal, ignorar
-
-                // El rayo es vertical: rayX, entre rayY1 y rayY0
                 float minX = Math.min(p1.x, p2.x);
                 float maxX = Math.max(p1.x, p2.x);
                 if (rayX < minX || rayX > maxX) continue;
 
-                // Y interpolada del segmento en rayX
-                float t    = (rayX - p1.x) / (p2.x - p1.x + 0.0001f);
-                float segY = p1.y + t * (p2.y - p1.y);
-
-                if (segY <= rayY0 && segY >= rayY1) {
-                    return true;
-                }
+                float segY = interpolarY(p1, p2, rayX);
+                if (segY <= rayY0 + MARGEN_RAY && segY >= rayY1) return true;
             }
         }
         return false;

@@ -37,9 +37,6 @@ public class Mapa1State extends BaseAppState {
 
     private float offsetX = 0f;
 
-    // =========================
-    // COLISIONES
-    // =========================
     private ArrayList<ArrayList<Vector2f>> segmentosColision = new ArrayList<>();
 
     @Override
@@ -78,9 +75,7 @@ public class Mapa1State extends BaseAppState {
         for (int i = 0; i < cantidadTiles; i++) {
             Quad quad = new Quad(bgAncho, bgAlto);
             Geometry tile = new Geometry("FondoTile_" + i, quad);
-
-            Material mat = new Material(
-                    app.getAssetManager(),
+            Material mat = new Material(app.getAssetManager(),
                     "Common/MatDefs/Misc/Unshaded.j3md");
             Texture tex = app.getAssetManager()
                     .loadTexture("Scenes/Fondo Mapa1.3.png");
@@ -92,16 +87,13 @@ public class Mapa1State extends BaseAppState {
 
         Quad quadMapa = new Quad(anchoFinal, altoFinal);
         geoMapa = new Geometry("Mapa1", quadMapa);
-
-        Material matMapa = new Material(
-                app.getAssetManager(),
+        Material matMapa = new Material(app.getAssetManager(),
                 "Common/MatDefs/Misc/Unshaded.j3md");
         Texture texMapa = app.getAssetManager()
                 .loadTexture("Interface/Mapa1.1.png");
         matMapa.setTexture("ColorMap", texMapa);
         matMapa.getAdditionalRenderState()
                .setBlendMode(RenderState.BlendMode.Alpha);
-
         geoMapa.setMaterial(matMapa);
         geoMapa.setQueueBucket(RenderQueue.Bucket.Transparent);
         geoMapa.setLocalTranslation(0f, (pantallaAlto - altoFinal) / 2f, 1f);
@@ -113,18 +105,12 @@ public class Mapa1State extends BaseAppState {
         System.out.println("Segmentos de colision: " + segmentosColision.size());
     }
 
-    // =========================
-    // MOVER CÁMARA POR CENTRO
-    // =========================
     public void moverCamara(float xJugador) {
         Camera cam = app.getCamera();
         float pantallaAncho = cam.getWidth();
         moverCamaraOffset(xJugador - (pantallaAncho / 2f));
     }
 
-    // =========================
-    // MOVER CÁMARA POR BORDE IZQUIERDO
-    // =========================
     public void moverCamaraOffset(float borde) {
         Camera cam = app.getCamera();
         float pantallaAncho = cam.getWidth();
@@ -143,8 +129,7 @@ public class Mapa1State extends BaseAppState {
         for (int i = 0; i < tilesFondo.size(); i++) {
             tilesFondo.get(i).setLocalTranslation(
                     (i * bgAncho) + (offsetX * PARALLAX),
-                    posYFondo,
-                    0f
+                    posYFondo, 0f
             );
         }
     }
@@ -155,9 +140,6 @@ public class Mapa1State extends BaseAppState {
         return segmentosColision;
     }
 
-    // =========================
-    // HELPERS
-    // =========================
     private static Vector2f v(float x, float y) {
         return new Vector2f(x, y);
     }
@@ -168,585 +150,468 @@ public class Mapa1State extends BaseAppState {
         return s;
     }
 
-    // =========================
-    // COLISIONES DEL MAPA 1
-    // 137 segmentos capturados con Coordenadas
-    // =========================
     private void cargarColisiones() {
 
-        // ── Seg 1 ──
+        // =============================
+        // SUELOS — 37 segmentos
+        // =============================
+
+        // ── S1 — piso inicio ──
         segmentosColision.add(seg(
-            v(66,570), v(204,570), v(468,570), v(688,571),
-            v(981,571), v(1461,572), v(1481,572), v(1485,567), v(1486,564)
+            v(66,569), v(393,569), v(791,569),
+            v(1476,569), v(1490,569)
         ));
-        // ── Seg 2 ──
+        // ── S2 ──
         segmentosColision.add(seg(
-            v(1486,564), v(1487,514), v(1487,476), v(1486,336),
-            v(1488,194), v(1487,66), v(1487,56)
+            v(1583,439), v(1554,439), v(1725,439),
+            v(2145,439), v(2845,437), v(2851,438)
         ));
-        // ── Seg 3 ──
+        // ── S3 ──
         segmentosColision.add(seg(
-            v(1,824), v(6,830), v(14,832), v(61,832)
+            v(2933,636), v(2916,636), v(3082,635), v(3652,635),
+            v(4177,635), v(4842,635), v(4853,636)
         ));
-        // ── Seg 4 ──
+        // ── S4 ──
         segmentosColision.add(seg(
-            v(61,832), v(63,796), v(62,737), v(62,638), v(63,573)
+            v(4860,441), v(5109,441)
         ));
-        // ── Seg 5 ──
+        // ── S5 ──
         segmentosColision.add(seg(
-            v(130,832), v(186,833), v(274,831), v(348,832),
-            v(411,832), v(482,833), v(550,832), v(581,831)
+            v(5119,247), v(5767,247), v(5770,247), v(5113,248)
         ));
-        // ── Seg 6 ──
+        // ── S6 ──
         segmentosColision.add(seg(
-            v(581,831), v(581,808), v(579,771)
+            v(5773,375), v(5766,375), v(6144,375),
+            v(6479,375), v(6482,375)
         ));
-        // ── Seg 7 ──
+        // ── S7 ──
         segmentosColision.add(seg(
-            v(578,771), v(529,769), v(477,770),
-            v(388,770), v(194,770), v(131,771)
+            v(6479,441), v(6679,441), v(7169,441), v(7191,441)
         ));
-        // ── Seg 8 ──
+        // ── S8 ──
         segmentosColision.add(seg(
-            v(131,771), v(130,835)
+            v(7192,377), v(7428,377), v(7698,376), v(7709,376)
         ));
-        // ── Seg 9 ──
+        // ── S9 ──
         segmentosColision.add(seg(
-            v(1230,832), v(1376,832), v(1658,833),
-            v(1738,832), v(1742,828), v(1748,824)
+            v(7320,570), v(7355,570), v(7382,569), v(7385,569)
         ));
-        // ── Seg 10 ──
+        // ── S10 ──
         segmentosColision.add(seg(
-            v(1231,821), v(1231,794), v(1231,771), v(1229,832)
+            v(7384,505), v(7609,506), v(7838,506)
         ));
-        // ── Seg 11 ──
+        // ── S11 ──
         segmentosColision.add(seg(
-            v(1231,771), v(1300,770), v(1392,768),
-            v(1499,771), v(1601,769), v(1685,769)
+            v(7836,311), v(8216,311), v(9206,311),
+            v(9801,311), v(10091,311), v(10106,313)
         ));
-        // ── Seg 12 ──
+        // ── S12 ──
         segmentosColision.add(seg(
-            v(1685,769), v(1685,726), v(1686,641)
+            v(10191,507), v(10172,507), v(10241,504), v(10290,506),
+            v(10587,505), v(11097,505), v(11752,505),
+            v(12023,505), v(12358,505), v(12375,507)
         ));
-        // ── Seg 13 ──
+        // ── S13 ──
         segmentosColision.add(seg(
-            v(1554,55), v(1554,110), v(1554,241),
-            v(1556,368), v(1554,413), v(1554,433)
+            v(12571,440), v(12621,440), v(12801,440),
+            v(12821,440), v(12828,440)
         ));
-        // ── Seg 14 ──
+        // ── S14 ──
         segmentosColision.add(seg(
-            v(1554,433), v(1560,441), v(1567,443), v(1578,442),
-            v(1598,443), v(1668,442), v(2059,443), v(2424,441),
-            v(2644,442), v(2775,444), v(2833,443), v(2843,441), v(2845,436)
+            v(13024,506), v(13103,506), v(13150,505)
         ));
-        // ── Seg 15 ──
+        // ── S15 ──
         segmentosColision.add(seg(
-            v(2847,435), v(2847,422), v(2847,367),
-            v(2847,277), v(2846,178), v(2848,90), v(2846,59)
+            v(13349,570), v(13431,570), v(13507,570), v(13604,570)
         ));
-        // ── Seg 16 ──
+        // ── S16 ──
         segmentosColision.add(seg(
-            v(1749,822), v(1749,798), v(1748,770),
-            v(1747,739), v(1747,704)
+            v(13799,765), v(13747,766), v(13737,767)
         ));
-        // ── Seg 17 ──
+        // ── S17 ──
         segmentosColision.add(seg(
-            v(1747,702), v(1811,703), v(1941,702)
+            v(13800,376), v(13926,375), v(14121,377)
         ));
-        // ── Seg 18 ──
+        // ── S18 ──
         segmentosColision.add(seg(
-            v(1941,702), v(1940,678), v(1941,640)
+            v(14127,441), v(14189,443)
         ));
-        // ── Seg 19 ──
+        // ── S19 ──
         segmentosColision.add(seg(
-            v(1941,640), v(1908,640), v(1686,643)
+            v(14192,506), v(14252,506)
         ));
-        // ── Seg 20 ──
+        // ── S20 ──
         segmentosColision.add(seg(
-            v(2073,702), v(2395,703)
+            v(14192,375), v(14316,375), v(14514,378)
         ));
-        // ── Seg 21 ──
+        // ── S21 ──
         segmentosColision.add(seg(
-            v(2395,703), v(2397,642)
+            v(10434,766), v(10487,766), v(10497,766)
         ));
-        // ── Seg 22 ──
+        // ── S22 ──
         segmentosColision.add(seg(
-            v(2394,641), v(2075,641)
+            v(10494,635), v(10584,636), v(10691,635)
         ));
-        // ── Seg 23 ──
+        // ── S23 ──
         segmentosColision.add(seg(
-            v(2075,641), v(2073,701)
+            v(10691,764), v(10721,766), v(10754,765)
         ));
-        // ── Seg 24 ──
+        // ── S24 ──
         segmentosColision.add(seg(
-            v(2527,701), v(2784,702)
+            v(8874,506), v(8759,507), v(8605,506),
+            v(8332,505), v(8100,507)
         ));
-        // ── Seg 25 ──
+        // ── S25 ──
         segmentosColision.add(seg(
-            v(2784,702), v(2783,641)
+            v(7905,506), v(7970,507)
         ));
-        // ── Seg 26 ──
+        // ── S26 ──
         segmentosColision.add(seg(
-            v(2783,641), v(2529,643)
+            v(7979,570), v(8001,570), v(8032,570)
         ));
-        // ── Seg 27 ──
+        // ── S27 ──
         segmentosColision.add(seg(
-            v(2529,643), v(2528,700)
+            v(7127,701), v(7157,702), v(7192,700)
         ));
-        // ── Seg 28 ──
+        // ── S28 ──
         segmentosColision.add(seg(
-            v(2915,57), v(2917,204), v(2918,289), v(2918,366),
-            v(2917,433), v(2918,519), v(2917,606), v(2917,628),
-            v(2923,635), v(2924,638)
+            v(7191,765), v(7223,766), v(7256,766)
         ));
-        // ── Seg 29 ──
+        // ── S29 ──
         segmentosColision.add(seg(
-            v(2924,638), v(3062,636), v(3782,638),
-            v(4462,638), v(4850,637), v(4855,631), v(4858,628)
+            v(7060,701), v(6936,702), v(6656,702),
+            v(6445,702), v(6425,702), v(6415,702)
         ));
-        // ── Seg 30 ──
+        // ── S30 ──
         segmentosColision.add(seg(
-            v(4858,627), v(4856,444)
+            v(6351,637), v(6379,637), v(6415,637)
         ));
-        // ── Seg 31 ──
+        // ── S31 ──
         segmentosColision.add(seg(
-            v(4856,444), v(5108,444), v(5112,440),
-            v(5117,435), v(5117,434), v(5118,382), v(5117,251)
+            v(6283,635), v(6228,635), v(6063,635), v(5848,635),
+            v(5598,635), v(5293,635), v(5128,635), v(5120,635)
         ));
-        // ── Seg 32 ──
+        // ── S32 ──
         segmentosColision.add(seg(
-            v(5113,249), v(5766,250)
+            v(2783,699), v(2733,699), v(2668,699),
+            v(2563,699), v(2528,699)
         ));
-        // ── Seg 33 ──
+        // ── S33 ──
         segmentosColision.add(seg(
-            v(5766,250), v(5766,370), v(5771,375), v(5774,376)
+            v(2396,700), v(2336,700), v(2216,700),
+            v(2096,700), v(2074,700)
         ));
-        // ── Seg 34 ──
+        // ── S34 ──
         segmentosColision.add(seg(
-            v(5117,577), v(5118,630), v(5125,635),
-            v(5129,638), v(5217,638), v(5788,638), v(6284,636)
+            v(1941,700), v(1903,701), v(1878,701),
+            v(1798,701), v(1748,701)
         ));
-        // ── Seg 35 ──
+        // ── S35 ──
         segmentosColision.add(seg(
-            v(6284,636), v(6283,577)
+            v(1231,830), v(1341,830), v(1461,830),
+            v(1601,830), v(1725,830), v(1747,830)
         ));
-        // ── Seg 36 ──
+        // ── S36 ──
         segmentosColision.add(seg(
-            v(6283,577), v(5786,576), v(5119,576)
+            v(582,830), v(463,830), v(295,830),
+            v(158,830), v(131,830)
         ));
-        // ── Seg 37 ──
+        // ── S37 ──
         segmentosColision.add(seg(
-            v(5774,379), v(6479,380)
+            v(61,830), v(9,831), v(0,831)
         ));
-        // ── Seg 38 ──
+
+        // =============================
+        // TECHOS — 25 segmentos
+        // =============================
+
+        // ── T1 ──
         segmentosColision.add(seg(
-            v(6479,380), v(6479,435), v(6485,440), v(6490,443)
+            v(131,771), v(170,771), v(330,771),
+            v(440,771), v(530,771), v(570,771), v(579,771)
         ));
-        // ── Seg 39 ──
+        // ── T2 ──
         segmentosColision.add(seg(
-            v(6490,443), v(7183,443), v(7188,437), v(7190,433)
+            v(1232,771), v(1257,771), v(1352,771), v(1442,771),
+            v(1526,771), v(1601,771), v(1667,771), v(1687,771)
         ));
-        // ── Seg 40 ──
+        // ── T3 ──
         segmentosColision.add(seg(
-            v(7190,433), v(7191,381)
+            v(1686,642), v(1760,642), v(1861,642),
+            v(1911,642), v(1940,642)
         ));
-        // ── Seg 41 ──
+        // ── T4 ──
         segmentosColision.add(seg(
-            v(6478,637), v(6476,576)
+            v(2075,642), v(2275,642), v(2335,642),
+            v(2390,642), v(2394,642)
         ));
-        // ── Seg 42 ──
+        // ── T5 ──
         segmentosColision.add(seg(
-            v(6476,576), v(6350,577)
+            v(2529,642), v(2559,642), v(2639,642),
+            v(2718,642), v(2759,642), v(2783,642)
         ));
-        // ── Seg 43 ──
+        // ── T6 ──
         segmentosColision.add(seg(
-            v(6350,637), v(6349,577)
+            v(3436,705), v(3476,705), v(3581,705),
+            v(3676,705), v(3688,705)
         ));
-        // ── Seg 44 ──
+        // ── T7 ──
         segmentosColision.add(seg(
-            v(6350,639), v(6413,639)
+            v(4214,706), v(4249,706), v(4404,706),
+            v(4434,706), v(4467,706)
         ));
-        // ── Seg 45 ──
+        // ── T8 ──
         segmentosColision.add(seg(
-            v(6413,639), v(6414,693), v(6421,699), v(6422,704)
+            v(5121,578), v(5201,578), v(5401,578), v(5656,578),
+            v(5886,578), v(6081,578), v(6221,578),
+            v(6251,578), v(6281,578)
         ));
-        // ── Seg 46 ──
+        // ── T9 ──
         segmentosColision.add(seg(
-            v(6422,704), v(7061,703)
+            v(6351,578), v(6431,578), v(6471,578), v(6475,578)
         ));
-        // ── Seg 47 ──
+        // ── T10 ──
         segmentosColision.add(seg(
-            v(7061,703), v(7060,640)
+            v(6478,643), v(6543,643), v(6658,643), v(6748,643),
+            v(6848,643), v(7018,643), v(7043,643), v(7057,643)
         ));
-        // ── Seg 48 ──
+        // ── T11 ──
         segmentosColision.add(seg(
-            v(7060,639), v(6482,640), v(6478,640)
+            v(7129,644), v(7164,644), v(7233,644), v(7252,644)
         ));
-        // ── Seg 49 ──
+        // ── T12 ──
         segmentosColision.add(seg(
-            v(7191,379), v(7700,379), v(7705,372), v(7708,369)
+            v(7518,577), v(7573,577), v(7618,577), v(7643,577)
         ));
-        // ── Seg 50 ──
+        // ── T12.5 ──
         segmentosColision.add(seg(
-            v(7708,369), v(7709,57)
+            v(7642,707), v(7656,707), v(7712,707), v(7778,707)
         ));
-        // ── Seg 51 ──
+        // ── T13 ──
         segmentosColision.add(seg(
-            v(7128,703), v(7127,641)
+            v(7778,641), v(7818,641), v(7883,641), v(7899,642)
         ));
-        // ── Seg 52 ──
+        // ── T14 ──
         segmentosColision.add(seg(
-            v(7255,640), v(7129,643)
+            v(7908,448), v(7948,448), v(8028,448), v(8030,448)
         ));
-        // ── Seg 53 ──
+        // ── T15 ──
         segmentosColision.add(seg(
-            v(7128,702), v(7194,704)
+            v(8102,448), v(8192,448), v(8362,448),
+            v(8662,448), v(8862,448), v(8873,448)
         ));
-        // ── Seg 54 ──
+        // ── T16 ──
         segmentosColision.add(seg(
-            v(7191,703), v(7191,757), v(7195,763), v(7201,768)
+            v(10564,707), v(10614,707), v(10621,707)
         ));
-        // ── Seg 55 ──
+        // ── T17 ──
         segmentosColision.add(seg(
-            v(7201,768), v(7255,768)
+            v(10435,576), v(10485,576), v(10610,576),
+            v(10696,576), v(10741,576), v(10750,577)
         ));
-        // ── Seg 56 ──
+        // ── T18 ──
         segmentosColision.add(seg(
-            v(7258,767), v(7254,641)
+            v(12574,707), v(12814,707), v(13054,707), v(13297,707),
+            v(13539,707), v(13599,707)
         ));
-        // ── Seg 57 ──
+        // ── T19 ──
         segmentosColision.add(seg(
-            v(7777,56), v(7776,443)
+            v(13871,707), v(13925,707)
         ));
-        // ── Seg 58 ──
+        // ── T20 ──
         segmentosColision.add(seg(
-            v(7776,443), v(7331,443), v(7326,449), v(7322,450)
+            v(14194,446), v(14220,445), v(14250,447)
         ));
-        // ── Seg 59 ──
+        // ── T21 — suelo inferior largo ──
         segmentosColision.add(seg(
-            v(7322,450), v(7321,564), v(7326,568), v(7332,573)
+            v(14514,901), v(14456,901), v(14316,901), v(14166,901),
+            v(13981,901), v(13786,901), v(13616,901), v(13451,901),
+            v(13266,901), v(13041,901), v(12782,901), v(12762,901),
+            v(12601,901), v(12472,901), v(12336,901), v(12101,901),
+            v(11836,901), v(11671,901), v(11521,901), v(11351,901),
+            v(11177,901), v(10981,901), v(10806,901), v(10637,901),
+            v(10482,901), v(10317,901), v(10142,901), v(9987,901),
+            v(9837,901), v(9687,901), v(9537,901), v(9382,901),
+            v(9217,901), v(9012,901), v(8827,901), v(8617,901),
+            v(8372,901), v(8128,901), v(7902,901), v(7733,901),
+            v(7523,901), v(7333,901), v(7083,901), v(6863,901),
+            v(6623,901), v(6333,901), v(5978,901), v(5823,901),
+            v(5553,901), v(5418,901), v(5228,901), v(5068,901),
+            v(4868,901), v(4669,901), v(4474,901), v(4284,901),
+            v(4119,901), v(3949,901), v(3759,901), v(3564,901),
+            v(3384,901), v(3179,901), v(3004,901), v(2809,901),
+            v(2624,901), v(2444,901), v(2264,901), v(2089,901),
+            v(1930,901), v(1744,901), v(1684,901), v(1505,902),
+            v(864,902), v(178,901), v(0,901)
         ));
-        // ── Seg 60 ──
+        // ── T22 ──
         segmentosColision.add(seg(
-            v(7332,573), v(7385,572)
+            v(13605,511), v(13517,511), v(13412,511),
+            v(13367,511), v(13351,511)
         ));
-        // ── Seg 61 ──
+        // ── T23 ──
         segmentosColision.add(seg(
-            v(7385,572), v(7385,510)
+            v(13150,447), v(13091,447), v(13025,448)
         ));
-        // ── Seg 62 ──
+        // ── T24 ──
         segmentosColision.add(seg(
-            v(7385,510), v(7838,508)
+            v(12826,384), v(12731,384), v(12646,384),
+            v(12606,384), v(12576,384)
         ));
-        // ── Seg 63 ──
+        // ── T25 ──
         segmentosColision.add(seg(
-            v(7838,508), v(7838,314)
+            v(7776,446), v(7681,446), v(7532,446),
+            v(7422,446), v(7342,446), v(7326,447)
         ));
-        // ── Seg 64 ──
-        segmentosColision.add(seg(
-            v(7838,314), v(8737,313), v(9582,314),
-            v(10099,313), v(10103,308), v(10107,304)
-        ));
-        // ── Seg 65 ──
-        segmentosColision.add(seg(
-            v(10107,304), v(10107,55)
-        ));
-        // ── Seg 66 ──
-        segmentosColision.add(seg(
-            v(7906,509), v(7969,509)
-        ));
-        // ── Seg 67 ──
-        segmentosColision.add(seg(
-            v(7969,509), v(7970,563), v(7976,570), v(7977,575)
-        ));
-        // ── Seg 68 ──
-        segmentosColision.add(seg(
-            v(8033,573), v(7979,574)
-        ));
-        // ── Seg 69 ──
-        segmentosColision.add(seg(
-            v(8033,570), v(8031,447)
-        ));
-        // ── Seg 70 ──
-        segmentosColision.add(seg(
-            v(8031,447), v(7907,449)
-        ));
-        // ── Seg 71 ──
-        segmentosColision.add(seg(
-            v(7907,449), v(7904,508)
-        ));
-        // ── Seg 72 ──
-        segmentosColision.add(seg(
-            v(8100,508), v(8874,507)
-        ));
-        // ── Seg 73 ──
-        segmentosColision.add(seg(
-            v(8874,507), v(8875,446)
-        ));
-        // ── Seg 74 ──
-        segmentosColision.add(seg(
-            v(8875,446), v(8100,446)
-        ));
-        // ── Seg 75 ──
-        segmentosColision.add(seg(
-            v(8100,446), v(8100,507)
-        ));
-        // ── Seg 76 ──
-        segmentosColision.add(seg(
-            v(10172,56), v(10172,498), v(10177,502), v(10180,508)
-        ));
-        // ── Seg 77 ──
-        segmentosColision.add(seg(
-            v(10180,508), v(10961,508), v(11807,508),
-            v(12364,507), v(12369,503), v(12373,500)
-        ));
-        // ── Seg 78 ──
-        segmentosColision.add(seg(
-            v(12373,500), v(12374,55)
-        ));
-        // ── Seg 79 ──
-        segmentosColision.add(seg(
-            v(10433,584), v(10432,758), v(10436,764), v(10439,768)
-        ));
-        // ── Seg 80 ──
-        segmentosColision.add(seg(
-            v(10439,768), v(10487,765), v(10487,765),
-            v(10491,762), v(10496,758), v(10495,637)
-        ));
-        // ── Seg 81 ──
-        segmentosColision.add(seg(
-            v(10495,637), v(10691,639)
-        ));
-        // ── Seg 82 ──
-        segmentosColision.add(seg(
-            v(10691,639), v(10692,757), v(10696,764), v(10698,767)
-        ));
-        // ── Seg 83 ──
-        segmentosColision.add(seg(
-            v(10696,767), v(10746,766), v(10750,764),
-            v(10754,761), v(10754,761), v(10755,583)
-        ));
-        // ── Seg 84 ──
-        segmentosColision.add(seg(
-            v(10755,583), v(10748,576), v(10678,576),
-            v(10442,575), v(10435,580)
-        ));
-        // ── Seg 85 ──
-        segmentosColision.add(seg(
-            v(12572,443), v(12828,442)
-        ));
-        // ── Seg 86 ──
-        segmentosColision.add(seg(
-            v(12828,440), v(12829,382)
-        ));
-        // ── Seg 87 ──
-        segmentosColision.add(seg(
-            v(12829,382), v(12572,382)
-        ));
-        // ── Seg 88 ──
-        segmentosColision.add(seg(
-            v(12572,382), v(12571,442)
-        ));
-        // ── Seg 89 ──
-        segmentosColision.add(seg(
-            v(13024,508), v(13152,508)
-        ));
-        // ── Seg 90 ──
-        segmentosColision.add(seg(
-            v(13152,508), v(13152,446)
-        ));
-        // ── Seg 91 ──
-        segmentosColision.add(seg(
-            v(13152,446), v(13026,447)
-        ));
-        // ── Seg 92 ──
-        segmentosColision.add(seg(
-            v(13026,447), v(13025,510)
-        ));
-        // ── Seg 93 ──
-        segmentosColision.add(seg(
-            v(13347,572), v(13605,573)
-        ));
-        // ── Seg 94 ──
-        segmentosColision.add(seg(
-            v(13606,574), v(13604,511)
-        ));
-        // ── Seg 95 ──
-        segmentosColision.add(seg(
-            v(13604,511), v(13349,511)
-        ));
-        // ── Seg 96 ──
-        segmentosColision.add(seg(
-            v(13348,572), v(13347,512)
-        ));
-        // ── Seg 97 ──
-        segmentosColision.add(seg(
-            v(13737,57), v(13737,758)
-        ));
-        // ── Seg 98 ──
-        segmentosColision.add(seg(
-            v(13737,758), v(13741,763), v(13746,768), v(13800,768)
-        ));
-        // ── Seg 99 ──
-        segmentosColision.add(seg(
-            v(13800,768), v(13803,377)
-        ));
-        // ── Seg 100 ──
-        segmentosColision.add(seg(
-            v(14124,378), v(13803,381)
-        ));
-        // ── Seg 101 ──
-        segmentosColision.add(seg(
-            v(14125,379), v(14125,437)
-        ));
-        // ── Seg 102 ──
-        segmentosColision.add(seg(
-            v(14125,445), v(14188,445)
-        ));
-        // ── Seg 103 ──
-        segmentosColision.add(seg(
-            v(14188,445), v(14188,507)
-        ));
-        // ── Seg 104 ──
-        segmentosColision.add(seg(
-            v(14188,508), v(14253,509)
-        ));
-        // ── Seg 105 ──
-        segmentosColision.add(seg(
-            v(14257,509), v(14256,444)
-        ));
-        // ── Seg 106 ──
-        segmentosColision.add(seg(
-            v(14256,444), v(14193,445)
-        ));
-        // ── Seg 107 ──
-        segmentosColision.add(seg(
-            v(14190,441), v(14190,381)
-        ));
-        // ── Seg 108 ──
-        segmentosColision.add(seg(
-            v(14190,381), v(14514,380)
-        ));
-        // ── Seg 109 ──
-        segmentosColision.add(seg(
-            v(14514,895), v(13931,899)
-        ));
-        // ── Seg 110 ──
-        segmentosColision.add(seg(
-            v(13931,899), v(13930,712), v(13926,707), v(13922,703)
-        ));
-        // ── Seg 111 ──
-        segmentosColision.add(seg(
-            v(13922,703), v(13877,703), v(13871,706), v(13868,709)
-        ));
-        // ── Seg 112 ──
-        segmentosColision.add(seg(
-            v(13868,709), v(13866,899)
-        ));
-        // ── Seg 113 ──
-        segmentosColision.add(seg(
-            v(13866,899), v(13606,896)
-        ));
-        // ── Seg 114 ──
-        segmentosColision.add(seg(
-            v(13606,896), v(13604,712), v(13598,704)
-        ));
-        // ── Seg 115 ──
-        segmentosColision.add(seg(
-            v(13598,704), v(13370,705), v(12581,704), v(12572,712)
-        ));
-        // ── Seg 116 ──
-        segmentosColision.add(seg(
-            v(12572,712), v(12570,898)
-        ));
-        // ── Seg 117 ──
-        segmentosColision.add(seg(
-            v(12570,898), v(12029,898), v(11639,898),
-            v(11333,898), v(10854,898), v(10626,898)
-        ));
-        // ── Seg 118 ──
-        segmentosColision.add(seg(
-            v(10625,897), v(10624,714), v(10617,702)
-        ));
-        // ── Seg 119 ──
-        segmentosColision.add(seg(
-            v(10615,703), v(10570,706), v(10560,712)
-        ));
-        // ── Seg 120 ──
-        segmentosColision.add(seg(
-            v(10560,712), v(10563,898)
-        ));
-        // ── Seg 121 ──
-        segmentosColision.add(seg(
-            v(10563,898), v(10223,898), v(9704,898), v(9114,898),
-            v(8619,898), v(8143,898), v(7905,898), v(7905,898)
-        ));
-        // ── Seg 122 ──
-        segmentosColision.add(seg(
-            v(7905,898), v(7904,648), v(7895,640)
-        ));
-        // ── Seg 123 ──
-        segmentosColision.add(seg(
-            v(7895,640), v(7784,640), v(7775,647)
-        ));
-        // ── Seg 124 ──
-        segmentosColision.add(seg(
-            v(7775,647), v(7775,700)
-        ));
-        // ── Seg 125 ──
-        segmentosColision.add(seg(
-            v(7775,700), v(7645,704)
-        ));
-        // ── Seg 126 ──
-        segmentosColision.add(seg(
-            v(7645,704), v(7643,583), v(7637,574)
-        ));
-        // ── Seg 127 ──
-        segmentosColision.add(seg(
-            v(7637,574), v(7525,575), v(7516,584)
-        ));
-        // ── Seg 128 ──
-        segmentosColision.add(seg(
-            v(7517,899), v(7515,587)
-        ));
-        // ── Seg 129 ──
-        segmentosColision.add(seg(
-            v(7518,898), v(7410,899), v(6974,899), v(6379,899),
-            v(5629,899), v(4959,899), v(4469,900)
-        ));
-        // ── Seg 130 ──
-        segmentosColision.add(seg(
-            v(4469,900), v(4468,714), v(4462,705)
-        ));
-        // ── Seg 131 ──
-        segmentosColision.add(seg(
-            v(4462,705), v(4222,705), v(4213,712)
-        ));
-        // ── Seg 132 ──
-        segmentosColision.add(seg(
-            v(4213,712), v(4212,899)
-        ));
-        // ── Seg 133 ──
-        segmentosColision.add(seg(
-            v(4212,899), v(4027,898), v(3692,899)
-        ));
-        // ── Seg 134 ──
-        segmentosColision.add(seg(
-            v(3692,899), v(3691,712), v(3682,704)
-        ));
-        // ── Seg 135 ──
-        segmentosColision.add(seg(
-            v(3682,704), v(3443,706), v(3434,711)
-        ));
-        // ── Seg 136 ──
-        segmentosColision.add(seg(
-            v(3434,711), v(3436,899)
-        ));
-        // ── Seg 137 ──
-        segmentosColision.add(seg(
-            v(3436,899), v(3131,899), v(2805,899), v(2305,899),
-            v(1776,899), v(1191,899), v(547,899), v(191,899), v(1,898)
-        ));
+
+        // =============================
+        // PAREDES — 70 segmentos
+        // =============================
+
+        // ── P1 ──
+        segmentosColision.add(seg(v(133,826), v(133,801), v(133,774)));
+        // ── P2 ──
+        segmentosColision.add(seg(v(62,831), v(60,776), v(62,744), v(61,673), v(61,572)));
+        // ── P3 ──
+        segmentosColision.add(seg(v(580,830), v(580,797), v(580,771)));
+        // ── P4 ──
+        segmentosColision.add(seg(v(1232,830), v(1232,796), v(1232,771)));
+        // ── P5 ──
+        segmentosColision.add(seg(v(1487,567), v(1487,506), v(1487,440), v(1487,336), v(1487,217), v(1487,119), v(1487,56)));
+        // ── P6 ──
+        segmentosColision.add(seg(v(1556,436), v(1555,408), v(1557,376), v(1557,330), v(1559,238), v(1556,162), v(1556,56)));
+        // ── P7 ──
+        segmentosColision.add(seg(v(1686,769), v(1686,731), v(1685,688), v(1685,642)));
+        // ── P8 ──
+        segmentosColision.add(seg(v(1748,827), v(1746,790), v(1747,754), v(1747,704)));
+        // ── P9 ──
+        segmentosColision.add(seg(v(1937,698), v(1937,668), v(1937,643)));
+        // ── P10 ──
+        segmentosColision.add(seg(v(2078,698), v(2078,668), v(2078,643)));
+        // ── P11 ──
+        segmentosColision.add(seg(v(2390,698), v(2390,668), v(2390,643)));
+        // ── P12 ──
+        segmentosColision.add(seg(v(2527,698), v(2527,668), v(2527,643)));
+        // ── P13 ──
+        segmentosColision.add(seg(v(2783,698), v(2783,668), v(2782,643)));
+        // ── P14 ──
+        segmentosColision.add(seg(v(2847,437), v(2847,402), v(2847,358), v(2847,197), v(2847,55)));
+        // ── P15 ──
+        segmentosColision.add(seg(v(2918,56), v(2918,129), v(2919,262), v(2919,391), v(2919,532), v(2920,617), v(2917,633)));
+        // ── P16 ──
+        segmentosColision.add(seg(v(3435,898), v(3435,850), v(3434,760), v(3434,709)));
+        // ── P17 ──
+        segmentosColision.add(seg(v(3689,708), v(3689,731), v(3689,788), v(3689,853), v(3689,897)));
+        // ── P18 ──
+        segmentosColision.add(seg(v(4215,897), v(4214,859), v(4214,814), v(4214,762), v(4214,731), v(4213,709)));
+        // ── P19 ──
+        segmentosColision.add(seg(v(4467,710), v(4467,748), v(4467,807), v(4467,861), v(4467,900)));
+        // ── P20 ──
+        segmentosColision.add(seg(v(4855,442), v(4853,509), v(4854,565), v(4854,613), v(4854,632)));
+        // ── P21 ──
+        segmentosColision.add(seg(v(5121,578), v(5119,628), v(5118,633)));
+        // ── P22 ──
+        segmentosColision.add(seg(v(5114,248), v(5113,283), v(5113,365), v(5113,413), v(5112,438)));
+        // ── P23 ──
+        segmentosColision.add(seg(v(5770,251), v(5770,317), v(5770,373)));
+        // ── P24 ──
+        segmentosColision.add(seg(v(6479,382), v(6480,411), v(6480,439)));
+        // ── P25 ──
+        segmentosColision.add(seg(v(6282,635), v(6282,609), v(6281,576)));
+        // ── P26 ──
+        segmentosColision.add(seg(v(6351,637), v(6352,603), v(6351,577)));
+        // ── P27 ──
+        segmentosColision.add(seg(v(6415,640), v(6415,672), v(6415,697)));
+        // ── P28 ──
+        segmentosColision.add(seg(v(6476,640), v(6477,604), v(6477,576)));
+        // ── P29 ──
+        segmentosColision.add(seg(v(7060,699), v(7059,672), v(7058,642)));
+        // ── P30 ──
+        segmentosColision.add(seg(v(7129,701), v(7129,671), v(7128,641)));
+        // ── P31 ──
+        segmentosColision.add(seg(v(7195,704), v(7195,730), v(7194,762)));
+        // ── P32 ──
+        segmentosColision.add(seg(v(7254,764), v(7255,728), v(7254,695), v(7253,642)));
+        // ── P33 ──
+        segmentosColision.add(seg(v(7187,381), v(7188,410), v(7188,438)));
+        // ── P34 ──
+        segmentosColision.add(seg(v(7323,568), v(7323,517), v(7323,454)));
+        // ── P35 ──
+        segmentosColision.add(seg(v(7706,374), v(7706,335), v(7705,264), v(7704,182), v(7704,127), v(7706,58)));
+        // ── P36 ──
+        segmentosColision.add(seg(v(7777,56), v(7777,115), v(7777,165), v(7778,258), v(7777,347), v(7778,445)));
+        // ── P37 ──
+        segmentosColision.add(seg(v(7519,899), v(7519,849), v(7519,738), v(7517,648), v(7517,582)));
+        // ── P38 ──
+        segmentosColision.add(seg(v(7645,701), v(7645,676), v(7645,640), v(7644,583)));
+        // ── P39 ──
+        segmentosColision.add(seg(v(7779,702), v(7779,677), v(7779,644)));
+        // ── P40 ──
+        segmentosColision.add(seg(v(7904,899), v(7903,843), v(7902,767), v(7901,691), v(7901,644)));
+        // ── P41 ──
+        segmentosColision.add(seg(v(7837,505), v(7837,457), v(7837,387), v(7837,312)));
+        // ── P42 ──
+        segmentosColision.add(seg(v(7906,506), v(7906,473), v(7906,449)));
+        // ── P42.2 ──
+        segmentosColision.add(seg(v(7976,510), v(7976,525), v(7976,563)));
+        // ── P43 ──
+        segmentosColision.add(seg(v(8031,570), v(8031,525), v(8030,449)));
+        // ── P44 ──
+        segmentosColision.add(seg(v(8102,506), v(8102,488), v(8102,449)));
+        // ── P45 ──
+        segmentosColision.add(seg(v(8874,505), v(8873,481), v(8873,450)));
+        // ── P46 ──
+        segmentosColision.add(seg(v(10104,311), v(10104,271), v(10104,174), v(10103,57)));
+        // ── P47 ──
+        segmentosColision.add(seg(v(10175,55), v(10176,94), v(10176,167), v(10176,312), v(10176,402), v(10175,495), v(10173,501)));
+        // ── P48 ──
+        segmentosColision.add(seg(v(10434,760), v(10434,713), v(10433,625), v(10433,582)));
+        // ── P49 ──
+        segmentosColision.add(seg(v(10494,762), v(10492,704), v(10493,639)));
+        // ── P50 ──
+        segmentosColision.add(seg(v(10694,762), v(10694,737), v(10694,663), v(10694,639)));
+        // ── P51 ──
+        segmentosColision.add(seg(v(10564,898), v(10564,845), v(10564,742), v(10563,713)));
+        // ── P52 ──
+        segmentosColision.add(seg(v(10625,900), v(10626,824), v(10625,747), v(10625,713)));
+        // ── P53 ──
+        segmentosColision.add(seg(v(10754,762), v(10754,720), v(10754,645), v(10754,591), v(10752,582)));
+        // ── P54 ──
+        segmentosColision.add(seg(v(12374,504), v(12374,453), v(12373,373), v(12374,270), v(12372,159), v(12372,82), v(12373,57)));
+        // ── P55 ──
+        segmentosColision.add(seg(v(12572,898), v(12572,824), v(12573,735), v(12571,713)));
+        // ── P56 ──
+        segmentosColision.add(seg(v(12572,442), v(12571,382)));
+        // ── P57 ──
+        segmentosColision.add(seg(v(12827,442), v(12827,415), v(12827,383)));
+        // ── P58 ──
+        segmentosColision.add(seg(v(13026,506), v(13026,483), v(13024,448)));
+        // ── P59 ──
+        segmentosColision.add(seg(v(13152,505), v(13152,470), v(13151,449)));
+        // ── P60 ──
+        segmentosColision.add(seg(v(13350,571), v(13350,538), v(13350,513)));
+        // ── P61 ──
+        segmentosColision.add(seg(v(13604,568), v(13604,550), v(13605,531), v(13605,512)));
+        // ── P62 ──
+        segmentosColision.add(seg(v(13604,899), v(13604,856), v(13605,813), v(13603,775), v(13603,718)));
+        // ── P63 ──
+        segmentosColision.add(seg(v(13739,757), v(13740,608), v(13738,495), v(13738,338), v(13739,249), v(13739,157), v(13739,93), v(13737,55)));
+        // ── P64 ──
+        segmentosColision.add(seg(v(13801,765), v(13800,682), v(13801,532), v(13800,357), v(13799,288), v(13799,175), v(13801,69), v(13800,56)));
+        // ── P65 ──
+        segmentosColision.add(seg(v(13868,898), v(13869,824), v(13869,754), v(13868,713)));
+        // ── P66 ──
+        segmentosColision.add(seg(v(13930,900), v(13929,833), v(13930,758), v(13930,713)));
+        // ── P67 ──
+        segmentosColision.add(seg(v(14125,382), v(14125,408), v(14126,438)));
+        // ── P68 ──
+        segmentosColision.add(seg(v(14190,448), v(14190,503)));
+        // ── P69 ──
+        segmentosColision.add(seg(v(14251,504), v(14251,453)));
+        // ── P70 ──
+        segmentosColision.add(seg(v(14190,380), v(14189,443)));
+        // ── P71 ──
+        segmentosColision.add(seg(v(14514,379), v(14514,489), v(14514,623), v(14514,896)));
     }
 
     @Override

@@ -11,6 +11,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.Node;
 import com.jme3.scene.shape.Quad;
 import com.jme3.texture.Texture;
 
@@ -20,51 +21,53 @@ public class Jugador implements ActionListener {
     private ColisionMapa      colisionMapa;
     private CamaraControl     camaraControl;
 
-    // =========================
-    // GEOMETRÍA
-    // =========================
+    private Node     nodoNyx;
     private Geometry geoNyx;
 
-    // Tamaño visual y AABB de colisión
     private final float ANCHO = 60f;
     private final float ALTO  = 60f;
 
-    // =========================
-    // POSICIÓN (esquina inf-izq del AABB)
-    // =========================
-    public float posX = 200f;
-    public float posY = 700f;
+    public float posX = 148f;
+    public float posY = 678f;
 
-    // =========================
-    // FÍSICA
-    // =========================
     private float velX = 0f;
     private float velY = 0f;
 
-    private final float VELOCIDAD      = 350f;  // píxeles/seg horizontal
-    private final float FUERZA_SALTO   = 900f;  // impulso vertical
-    private final float GRAVEDAD       = -2000f; // aceleración hacia abajo
-    private final float VEL_MAX_CAIDA  = -1200f; // velocidad máxima de caída
+    private final float VELOCIDAD     = 350f;
+    private final float FUERZA_SALTO  = 900f;
+    private final float GRAVEDAD      = -2000f;
+    private final float VEL_MAX_CAIDA = -1200f;
+    private final int   SUBSTEPS      = 4;
 
-    private boolean enPiso    = false;
+    // =========================
+    // SALTO VARIABLE
+    // Mientras mantienes espacio
+    // y vas subiendo, la gravedad
+    // se reduce para llegar más alto
+    //
+    // GRAVEDAD_SALTO: multiplicador
+    //   1.0 = gravedad normal (salto corto)
+    //   0.0 = sin gravedad (sube infinito)
+    //   0.4 = equilibrio para ~4.5 tiles
+    //
+    // CORTE_SALTO: al soltar espacio
+    // antes de llegar al tope, la vel
+    // se multiplica por esto (0.5 = corte)
+    // =========================
+    private final float GRAVEDAD_SALTO = 0.6f;
+    private final float CORTE_SALTO    = 0.95f;
+
+    private boolean saltandoPresionado = false;
+
+    private boolean enPiso      = false;
     private boolean puedeSaltar = false;
 
-    // =========================
-    // ROTACIÓN (bolita)
-    // =========================
-    private float anguloRotacion = 0f;
-    // Grados por píxel recorrido (ajusta a gusto)
-    private final float GRADOS_POR_PIXEL = 0.4f;
+    private float anguloRotacion     = 0f;
+    private final float GRADOS_POR_PIXEL = 0.35f;
 
-    // =========================
-    // INPUT
-    // =========================
     private boolean moverIzq = false;
     private boolean moverDer = false;
 
-    // =========================
-    // CONSTRUCTOR
-    // =========================
     public Jugador(SimpleApplication app,
                    ColisionMapa colisionMapa,
                    CamaraControl camaraControl) {
@@ -77,9 +80,6 @@ public class Jugador implements ActionListener {
         registrarInput();
     }
 
-    // =========================
-    // CREAR QUAD CON TEXTURA
-    // =========================
     private void crearVisual() {
 
         Quad quad = new Quad(ANCHO, ALTO);
@@ -88,7 +88,6 @@ public class Jugador implements ActionListener {
         Material mat = new Material(
                 app.getAssetManager(),
                 "Common/MatDefs/Misc/Unshaded.j3md");
-
         Texture tex = app.getAssetManager()
                 .loadTexture("Interface/nyx.png");
         tex.setWrap(Texture.WrapMode.EdgeClamp);
@@ -98,20 +97,20 @@ public class Jugador implements ActionListener {
 
         geoNyx.setMaterial(mat);
         geoNyx.setQueueBucket(RenderQueue.Bucket.Transparent);
+        geoNyx.setLocalTranslation(-ANCHO / 2f, -ALTO / 2f, 0f);
 
-        // Pivote en el centro del quad para que rote bien
-        // jME rota desde el origen (0,0) del quad,
-        // así que movemos el pivot al centro con la traslación del nodo
-        geoNyx.setLocalTranslation(posX, posY, 2f);
+        nodoNyx = new Node("NodoNyx");
+        nodoNyx.attachChild(geoNyx);
+        nodoNyx.setLocalTranslation(
+                posX + ANCHO / 2f,
+                posY + ALTO  / 2f,
+                2f
+        );
 
-        app.getRootNode().attachChild(geoNyx);
+        app.getRootNode().attachChild(nodoNyx);
     }
 
-    // =========================
-    // INPUT
-    // =========================
     private void registrarInput() {
-
         app.getInputManager().addMapping("NyxIzq",
                 new KeyTrigger(KeyInput.KEY_LEFT),
                 new KeyTrigger(KeyInput.KEY_A));
@@ -128,95 +127,122 @@ public class Jugador implements ActionListener {
     @Override
     public void onAction(String name, boolean isPressed, float tpf) {
 
-        if (name.equals("NyxIzq"))  moverIzq = isPressed;
-        if (name.equals("NyxDer"))  moverDer = isPressed;
+        if (camaraControl.isModoDebug()) {
+            moverIzq           = false;
+            moverDer           = false;
+            saltandoPresionado = false;
+            return;
+        }
 
-        // SALTO: solo al soltar la tecla si está en piso
-        if (name.equals("NyxSalto") && !isPressed && puedeSaltar) {
-            velY = FUERZA_SALTO;
-            enPiso     = false;
-            puedeSaltar = false;
+        if (name.equals("NyxIzq")) moverIzq = isPressed;
+        if (name.equals("NyxDer")) moverDer = isPressed;
+
+        if (name.equals("NyxSalto")) {
+
+            if (isPressed && puedeSaltar) {
+                // INICIO DEL SALTO
+                velY               = FUERZA_SALTO;
+                enPiso             = false;
+                puedeSaltar        = false;
+                saltandoPresionado = true;
+
+            } else if (!isPressed && saltandoPresionado && velY > 0f) {
+                // SOLTÓ ESPACIO ANTES DEL TOPE
+                // → cortar velocidad para salto corto
+                velY               *= CORTE_SALTO;
+                saltandoPresionado  = false;
+            }
         }
     }
 
-    // =========================
-    // UPDATE — llamar desde Main.simpleUpdate
-    // =========================
     public void update(float tpf) {
 
-        // ── 1. MOVIMIENTO HORIZONTAL ──
-        velX = 0f;
-        if (moverIzq) velX = -VELOCIDAD;
-        if (moverDer) velX =  VELOCIDAD;
-
-        // ── 2. GRAVEDAD ──
-        velY += GRAVEDAD * tpf;
-        if (velY < VEL_MAX_CAIDA) velY = VEL_MAX_CAIDA;
-
-        // ── 3. MOVER POSICIÓN ──
-        posX += velX * tpf;
-        posY += velY * tpf;
-
-        // ── 4. COLISIONES ──
-        ColisionMapa.Resultado r = colisionMapa.resolver(posX, posY, ANCHO, ALTO);
-        posX = r.posX;
-        posY = r.posY;
-
-        if (r.enPiso) {
-            velY        = 0f;
-            enPiso      = true;
-            puedeSaltar = true;
+        // ── 1. VELOCIDAD HORIZONTAL ──
+        if (camaraControl.isModoDebug()) {
+            velX = 0f;
         } else {
-            enPiso      = false;
-            puedeSaltar = false;
+            velX = 0f;
+            if (moverIzq) velX = -VELOCIDAD;
+            if (moverDer) velX =  VELOCIDAD;
         }
 
-        if (r.enTecho)                      velY = 0f;
-        if (r.enParedIzq || r.enParedDer)   velX = 0f;
+        // ── 2. GRAVEDAD ──
+        // Si el jugador va subiendo Y mantiene espacio:
+        // aplicar gravedad reducida → sube más alto
+        // En cualquier otro caso: gravedad normal
+        float gravedadFrame;
 
-        // ── 5. ROTACIÓN (bolita rueda según movimiento) ──
-        // Positivo = rueda a la derecha, negativo = a la izquierda
+        if (saltandoPresionado && velY > 0f) {
+            gravedadFrame = GRAVEDAD * GRAVEDAD_SALTO;
+        } else {
+            gravedadFrame      = GRAVEDAD;
+            saltandoPresionado = false; // ya no sube, desactivar
+        }
+
+        velY += gravedadFrame * tpf;
+        if (velY < VEL_MAX_CAIDA) velY = VEL_MAX_CAIDA;
+
+        // ── 3. SUB-PASOS DE FÍSICA + COLISIÓN ──
+        float dtSub = tpf / SUBSTEPS;
+        enPiso      = false;
+
+        for (int i = 0; i < SUBSTEPS; i++) {
+
+            posX += velX * dtSub;
+            posY += velY * dtSub;
+
+            ColisionMapa.Resultado r =
+                    colisionMapa.resolver(posX, posY, ANCHO, ALTO);
+            posX = r.posX;
+            posY = r.posY;
+
+            if (r.enPiso) {
+                velY               = 0f;
+                enPiso             = true;
+                puedeSaltar        = true;
+                saltandoPresionado = false;
+            }
+            if (r.enTecho) {
+                velY               = 0f;
+                saltandoPresionado = false; // techo corta el salto
+            }
+            if (r.enParedIzq || r.enParedDer) velX = 0f;
+        }
+
+        if (!enPiso) puedeSaltar = false;
+
+        // ── 4. ROTACIÓN ──
         if (velX != 0f) {
             anguloRotacion -= velX * GRADOS_POR_PIXEL * tpf;
         }
 
-        // ── 6. ACTUALIZAR VISUAL ──
-        // Centro del quad para rotar desde el medio
+        // ── 5. ACTUALIZAR NODO ──
         float centroX = posX + ANCHO / 2f;
         float centroY = posY + ALTO  / 2f;
 
         Quaternion rot = new Quaternion();
-        rot.fromAngleAxis(anguloRotacion * FastMath.DEG_TO_RAD,
-                Vector3f.UNIT_Z);
-        geoNyx.setLocalRotation(rot);
-
-        // Posición: compensamos el pivote para que el quad
-        // rote sobre su centro y no sobre su esquina
-        geoNyx.setLocalTranslation(
-                centroX - ANCHO / 2f,
-                centroY - ALTO  / 2f,
-                2f
+        rot.fromAngleAxis(
+                anguloRotacion * FastMath.DEG_TO_RAD,
+                Vector3f.UNIT_Z
         );
+        nodoNyx.setLocalRotation(rot);
+        nodoNyx.setLocalTranslation(centroX, centroY, 2f);
 
-        // ── 7. CÁMARA SIGUE A NYX ──
+        // ── 6. CÁMARA SIGUE A NYX ──
         camaraControl.seguirJugador(centroX);
     }
 
-    // =========================
-    // QUITAR DEL ESCENARIO
-    // =========================
     public void destruir() {
-        geoNyx.removeFromParent();
+        nodoNyx.removeFromParent();
         app.getInputManager().deleteMapping("NyxIzq");
         app.getInputManager().deleteMapping("NyxDer");
         app.getInputManager().deleteMapping("NyxSalto");
         app.getInputManager().removeListener(this);
     }
 
-    // Getters útiles para más adelante
-    public float getPosX()   { return posX; }
-    public float getPosY()   { return posY; }
-    public float getAncho()  { return ANCHO; }
-    public float getAlto()   { return ALTO; }
-    public boolean isEnPiso(){ return enPiso; }
+    public float getPosX()    { return posX; }
+    public float getPosY()    { return posY; }
+    public float getAncho()   { return ANCHO; }
+    public float getAlto()    { return ALTO; }
+    public boolean isEnPiso() { return enPiso; }
 }

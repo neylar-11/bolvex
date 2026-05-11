@@ -15,8 +15,9 @@ public class CamaraControl implements ActionListener {
     private boolean moverIzquierda = false;
     private boolean moverDerecha   = false;
 
-    // camaraX = borde izquierdo del mundo (offsetX sin clampear)
     private float camaraX = 0f;
+
+    private boolean modoDebugCamara = false;
 
     public CamaraControl(SimpleApplication app, Mapa1State mapaState) {
         this.app       = app;
@@ -28,27 +29,59 @@ public class CamaraControl implements ActionListener {
         app.getInputManager().addMapping("CamaraDerecha",
                 new KeyTrigger(KeyInput.KEY_RIGHT),
                 new KeyTrigger(KeyInput.KEY_D));
+        app.getInputManager().addMapping("ToggleDebugCamara",
+                new KeyTrigger(KeyInput.KEY_L));
+
         app.getInputManager().addListener(this,
-                "CamaraIzquierda", "CamaraDerecha");
+                "CamaraIzquierda", "CamaraDerecha", "ToggleDebugCamara");
     }
 
     @Override
     public void onAction(String name, boolean isPressed, float tpf) {
-        if (name.equals("CamaraIzquierda")) moverIzquierda = isPressed;
-        if (name.equals("CamaraDerecha"))   moverDerecha   = isPressed;
+
+        if (name.equals("ToggleDebugCamara") && !isPressed) {
+            modoDebugCamara = !modoDebugCamara;
+            if (modoDebugCamara) {
+                camaraX = mapaState.getOffsetX();
+            }
+            System.out.println("══ Cámara debug: "
+                    + (modoDebugCamara
+                        ? "ON  — flechas mueven cámara libre (L para salir)"
+                        : "OFF — cámara sigue a Nyx") + " ══");
+        }
+
+        // Solo registra flechas si está en modo debug
+        if (modoDebugCamara) {
+            if (name.equals("CamaraIzquierda")) moverIzquierda = isPressed;
+            if (name.equals("CamaraDerecha"))   moverDerecha   = isPressed;
+        } else {
+            // Al salir del modo debug limpia el estado para que no queden presionadas
+            moverIzquierda = false;
+            moverDerecha   = false;
+        }
     }
 
     public void update(float tpf) {
+        if (!modoDebugCamara) return;
+
         if (moverIzquierda) camaraX -= VELOCIDAD * tpf;
         if (moverDerecha)   camaraX += VELOCIDAD * tpf;
 
-        // Pasamos el borde izquierdo directo al mapa
         mapaState.moverCamaraOffset(camaraX);
     }
 
-    // Siempre devuelve el offsetX real ya clampeado
+    public void seguirJugador(float centroXJugador) {
+        if (modoDebugCamara) return;
+        mapaState.moverCamara(centroXJugador);
+        camaraX = mapaState.getOffsetX();
+    }
+
     public float getCamaraX() {
         return mapaState.getOffsetX();
     }
-}
 
+    // El jugador consulta esto para saber si debe ignorar su input
+    public boolean isModoDebug() {
+        return modoDebugCamara;
+    }
+}
