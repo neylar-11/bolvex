@@ -8,45 +8,36 @@ import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.math.Vector2f;
 import com.jme3.ui.Picture;
-
 import java.awt.Polygon;
 
 public class NivelesState extends BaseAppState implements ActionListener {
 
     private SimpleApplication app;
-    private Picture backgroundNiveles;
+    private Main              main;
+    private Picture           backgroundNiveles;
+    private Polygon           nivel1;
 
-    // POLÍGONO NIVEL 1
-    private Polygon nivel1;
+    private static final String MAPPING_CLICK_NIVEL = "ClickNivel";
+
+    public NivelesState(Main main) {
+        this.main = main;
+    }
 
     @Override
     protected void initialize(Application app) {
-
         this.app = (SimpleApplication) app;
 
         backgroundNiveles = new Picture("NivelesBackground");
-
         backgroundNiveles.setImage(
                 app.getAssetManager(),
                 "Interface/imagen niveles.jpeg",
                 true
         );
-
-        backgroundNiveles.setWidth(
-                app.getContext().getSettings().getWidth()
-        );
-
-        backgroundNiveles.setHeight(
-                app.getContext().getSettings().getHeight()
-        );
-
+        backgroundNiveles.setWidth(app.getContext().getSettings().getWidth());
+        backgroundNiveles.setHeight(app.getContext().getSettings().getHeight());
         backgroundNiveles.setPosition(0, 0);
 
-        // =========================
-        // CREAR POLÍGONO NIVEL 1
-        // =========================
         nivel1 = new Polygon();
-
         nivel1.addPoint(339, 834);
         nivel1.addPoint(362, 840);
         nivel1.addPoint(390, 840);
@@ -71,71 +62,50 @@ public class NivelesState extends BaseAppState implements ActionListener {
         nivel1.addPoint(307, 788);
         nivel1.addPoint(318, 806);
         nivel1.addPoint(328, 823);
-
-        // CLICK
-        this.app.getInputManager().addMapping(
-                "ClickNivel",
-                new MouseButtonTrigger(MouseInput.BUTTON_LEFT)
-        );
-
-        this.app.getInputManager().addListener(
-                this,
-                "ClickNivel"
-        );
     }
 
     @Override
     protected void onEnable() {
-
         app.getGuiNode().attachChild(backgroundNiveles);
+        app.getInputManager().setCursorVisible(true);
 
-        System.out.println(
-                "Estás en la selección de niveles."
-        );
+        app.getInputManager().addMapping(MAPPING_CLICK_NIVEL,
+                new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
+        app.getInputManager().addListener(this, MAPPING_CLICK_NIVEL);
+
+        System.out.println("Selección de niveles");
     }
 
     @Override
     protected void onDisable() {
-
         backgroundNiveles.removeFromParent();
-    }
-
-    @Override
-    protected void cleanup(Application app) {
-
-    }
-
-    @Override
-    public void onAction(
-            String name,
-            boolean isPressed,
-            float tpf
-    ) {
-
-        if (isPressed) {
-            return;
+        app.getInputManager().removeListener(this);
+        if (app.getInputManager().hasMapping(MAPPING_CLICK_NIVEL)) {
+            app.getInputManager().deleteMapping(MAPPING_CLICK_NIVEL);
         }
+        app.getInputManager().setCursorVisible(false);
+    }
 
-        if (name.equals("ClickNivel")) {
+    @Override
+    protected void cleanup(Application app) {}
 
-            Vector2f mouse =
-                    app.getInputManager()
-                            .getCursorPosition();
+    @Override
+    public void onAction(String name, boolean isPressed, float tpf) {
+        if (isPressed) return;
 
-            // =========================
-            // CLICK NIVEL 1
-            // =========================
-            if (nivel1.contains(mouse.x, mouse.y)) {
+        if (name.equals(MAPPING_CLICK_NIVEL)) {
+            Vector2f mouse = app.getInputManager().getCursorPosition();
 
-                System.out.println("CLICK NIVEL 1");
-
+            // SIN invertir Y — las coordenadas del polígono ya eran correctas
+            // en la versión original que funcionaba
+            if (nivel1.contains((int) mouse.x, (int) mouse.y)) {
+                System.out.println("CLICK NIVEL 1 — iniciando juego");
                 getStateManager().detach(this);
-                getStateManager().attach(new Mapa1State());
+                main.iniciarJuego();
+            } else {
+                // Debug temporal: muestra dónde está clickeando
+                System.out.println("Click en: " + (int)mouse.x + ", " + (int)mouse.y);
             }
-                
-
-                // AQUÍ CAMBIAS DE NIVEL
-            
         }
     }
 }

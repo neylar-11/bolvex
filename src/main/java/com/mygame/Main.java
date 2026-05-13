@@ -6,12 +6,14 @@ public class Main extends SimpleApplication {
 
     private Mapa1State    mapaState;
     private CamaraControl camaraControl;
-    private ColisionMapa  colisionMapa;  // NUEVO
-    private Jugador       jugador;       // NUEVO
+    private ColisionMapa  colisionMapa;
+    private Jugador       jugador;
+
+    private boolean mapaListo     = false;
+    private boolean juegoIniciado = false;
 
     public static void main(String[] args) {
-        Main app = new Main();
-        app.start();
+        new Main().start();
     }
 
     @Override
@@ -19,40 +21,40 @@ public class Main extends SimpleApplication {
         setDisplayStatView(false);
         setDisplayFps(false);
 
-        // MAPA (render + colisiones hardcodeadas)
         mapaState = new Mapa1State();
         stateManager.attach(mapaState);
-
-        // COLISIONES — lee los segmentos del mapa
-        colisionMapa = new ColisionMapa(mapaState.getSegmentosColision());
-
-        // CÁMARA (va antes que Coordenadas y Jugador)
-        camaraControl = new CamaraControl(this, mapaState);
-
-        // JUGADOR
-        jugador = new Jugador(this, colisionMapa, camaraControl);
-
-        // DEBUG de coordenadas (quitar en producción)
-        new Coordenadas(this, camaraControl);
-
-        // MENÚ
-        stateManager.attach(new MenuState());
+        stateManager.attach(new MenuState(this));
     }
 
     @Override
     public void simpleUpdate(float tpf) {
-        // update de cámara: solo actúa si está en modo manual
-        if (camaraControl != null) {
-            camaraControl.update(tpf);
+        if (!mapaListo && mapaState.isInitialized()) {
+            mapaListo = true;
         }
-        // update del jugador: mueve a Nyx y arrastra la cámara
-        if (jugador != null) {
-            jugador.update(tpf);
+
+        if (juegoIniciado) {
+            if (camaraControl != null) camaraControl.update(tpf);
+            if (jugador       != null) jugador.update(tpf);
         }
     }
 
-    // Getters por si otras clases los necesitan
-    public ColisionMapa  getColisionMapa()  { return colisionMapa; }
+    public void iniciarJuego() {
+        if (juegoIniciado) return;
+
+        colisionMapa  = new ColisionMapa(mapaState.getSegmentosColision());
+        camaraControl = new CamaraControl(this, mapaState);
+        jugador       = new Jugador(this, colisionMapa, camaraControl, mapaState);
+        new Coordenadas(this, camaraControl);
+
+        // ── CONECTAR ITEM: esto activa el primer bloque y la detección de toque ──
+        mapaState.setColisionMapa(colisionMapa);
+        mapaState.setJugador(jugador);
+
+        juegoIniciado = true;
+        System.out.println("Juego iniciado");
+    }
+
+    public ColisionMapa  getColisionMapa()  { return colisionMapa;  }
     public CamaraControl getCamaraControl() { return camaraControl; }
-    public Jugador       getJugador()       { return jugador; }
+    public Jugador       getJugador()       { return jugador;       }
 }

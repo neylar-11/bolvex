@@ -20,12 +20,14 @@ public class Jugador implements ActionListener {
     private SimpleApplication app;
     private ColisionMapa      colisionMapa;
     private CamaraControl     camaraControl;
+    private Mapa1State        mapaState;
 
     private Node     nodoNyx;
     private Geometry geoNyx;
+    private Material matNyx;
 
-    private final float ANCHO = 60f;
-    private final float ALTO  = 60f;
+    private final float ANCHO = 40f;
+    private final float ALTO  = 40f;
 
     public float posX = 148f;
     public float posY = 678f;
@@ -39,76 +41,81 @@ public class Jugador implements ActionListener {
     private final float VEL_MAX_CAIDA = -1200f;
     private final int   SUBSTEPS      = 4;
 
-    // =========================
-    // SALTO VARIABLE
-    // Mientras mantienes espacio
-    // y vas subiendo, la gravedad
-    // se reduce para llegar más alto
-    //
-    // GRAVEDAD_SALTO: multiplicador
-    //   1.0 = gravedad normal (salto corto)
-    //   0.0 = sin gravedad (sube infinito)
-    //   0.4 = equilibrio para ~4.5 tiles
-    //
-    // CORTE_SALTO: al soltar espacio
-    // antes de llegar al tope, la vel
-    // se multiplica por esto (0.5 = corte)
-    // =========================
     private final float GRAVEDAD_SALTO = 0.6f;
     private final float CORTE_SALTO    = 0.95f;
 
     private boolean saltandoPresionado = false;
+    private boolean enPiso             = false;
+    private boolean puedeSaltar        = false;
 
-    private boolean enPiso      = false;
-    private boolean puedeSaltar = false;
-
-    private float anguloRotacion     = 0f;
+    private float anguloRotacion         = 0f;
     private final float GRADOS_POR_PIXEL = 0.35f;
 
     private boolean moverIzq = false;
     private boolean moverDer = false;
 
+    // ── TRANSFORMACIÓN ──
+    private boolean transformado = false;
+
     public Jugador(SimpleApplication app,
                    ColisionMapa colisionMapa,
                    CamaraControl camaraControl) {
+        this(app, colisionMapa, camaraControl, null);
+    }
 
-        this.app           = app;
+    public Jugador(SimpleApplication app,
+                   ColisionMapa colisionMapa,
+                   CamaraControl camaraControl,
+                   Mapa1State mapaState) {
+        this.app          = app;
         this.colisionMapa  = colisionMapa;
         this.camaraControl = camaraControl;
-
+        this.mapaState     = mapaState;
         crearVisual();
         registrarInput();
     }
 
     private void crearVisual() {
-
         Quad quad = new Quad(ANCHO, ALTO);
         geoNyx = new Geometry("Nyx", quad);
 
-        Material mat = new Material(
-                app.getAssetManager(),
+        matNyx = new Material(app.getAssetManager(),
                 "Common/MatDefs/Misc/Unshaded.j3md");
         Texture tex = app.getAssetManager()
-                .loadTexture("Interface/nyx.png");
+                .loadTexture("Interface/nyx2.png");
         tex.setWrap(Texture.WrapMode.EdgeClamp);
-        mat.setTexture("ColorMap", tex);
-        mat.getAdditionalRenderState()
-           .setBlendMode(RenderState.BlendMode.Alpha);
+        matNyx.setTexture("ColorMap", tex);
+        matNyx.getAdditionalRenderState()
+              .setBlendMode(RenderState.BlendMode.Alpha);
+        // FIX: evita que las esquinas transparentes tapen sprites detrás
+        matNyx.getAdditionalRenderState()
+              .setDepthWrite(false);
 
-        geoNyx.setMaterial(mat);
+        geoNyx.setMaterial(matNyx);
         geoNyx.setQueueBucket(RenderQueue.Bucket.Transparent);
         geoNyx.setLocalTranslation(-ANCHO / 2f, -ALTO / 2f, 0f);
 
         nodoNyx = new Node("NodoNyx");
         nodoNyx.attachChild(geoNyx);
-        nodoNyx.setLocalTranslation(
-                posX + ANCHO / 2f,
-                posY + ALTO  / 2f,
-                2f
-        );
+        nodoNyx.setLocalTranslation(posX + ANCHO / 2f, posY + ALTO / 2f, 2f);
 
         app.getRootNode().attachChild(nodoNyx);
     }
+
+    // ── Cambia la textura del jugador al recoger el item ──
+    public void transformar() {
+        if (transformado) return;
+        transformado = true;
+
+        Texture tex = app.getAssetManager()
+                .loadTexture("Interface/nyx2ladrillo.png");
+        tex.setWrap(Texture.WrapMode.EdgeClamp);
+        matNyx.setTexture("ColorMap", tex);
+
+        System.out.println("¡Nyx se transformó con el ladrillo!");
+    }
+
+    public boolean isTransformado() { return transformado; }
 
     private void registrarInput() {
         app.getInputManager().addMapping("NyxIzq",
@@ -119,14 +126,11 @@ public class Jugador implements ActionListener {
                 new KeyTrigger(KeyInput.KEY_D));
         app.getInputManager().addMapping("NyxSalto",
                 new KeyTrigger(KeyInput.KEY_SPACE));
-
-        app.getInputManager().addListener(this,
-                "NyxIzq", "NyxDer", "NyxSalto");
+        app.getInputManager().addListener(this, "NyxIzq", "NyxDer", "NyxSalto");
     }
 
     @Override
     public void onAction(String name, boolean isPressed, float tpf) {
-
         if (camaraControl.isModoDebug()) {
             moverIzq           = false;
             moverDer           = false;
@@ -138,19 +142,14 @@ public class Jugador implements ActionListener {
         if (name.equals("NyxDer")) moverDer = isPressed;
 
         if (name.equals("NyxSalto")) {
-
             if (isPressed && puedeSaltar) {
-                // INICIO DEL SALTO
                 velY               = FUERZA_SALTO;
                 enPiso             = false;
                 puedeSaltar        = false;
                 saltandoPresionado = true;
-
             } else if (!isPressed && saltandoPresionado && velY > 0f) {
-                // SOLTÓ ESPACIO ANTES DEL TOPE
-                // → cortar velocidad para salto corto
-                velY               *= CORTE_SALTO;
-                saltandoPresionado  = false;
+                velY              *= CORTE_SALTO;
+                saltandoPresionado = false;
             }
         }
     }
@@ -167,27 +166,21 @@ public class Jugador implements ActionListener {
         }
 
         // ── 2. GRAVEDAD ──
-        // Si el jugador va subiendo Y mantiene espacio:
-        // aplicar gravedad reducida → sube más alto
-        // En cualquier otro caso: gravedad normal
         float gravedadFrame;
-
         if (saltandoPresionado && velY > 0f) {
             gravedadFrame = GRAVEDAD * GRAVEDAD_SALTO;
         } else {
             gravedadFrame      = GRAVEDAD;
-            saltandoPresionado = false; // ya no sube, desactivar
+            saltandoPresionado = false;
         }
-
         velY += gravedadFrame * tpf;
         if (velY < VEL_MAX_CAIDA) velY = VEL_MAX_CAIDA;
 
         // ── 3. SUB-PASOS DE FÍSICA + COLISIÓN ──
         float dtSub = tpf / SUBSTEPS;
-        enPiso      = false;
+        enPiso = false;
 
         for (int i = 0; i < SUBSTEPS; i++) {
-
             posX += velX * dtSub;
             posY += velY * dtSub;
 
@@ -195,6 +188,18 @@ public class Jugador implements ActionListener {
                     colisionMapa.resolver(posX, posY, ANCHO, ALTO);
             posX = r.posX;
             posY = r.posY;
+
+            if (mapaState != null) {
+                mapaState.updateBloques(posX, posY, ANCHO, ALTO, velY, dtSub);
+                mapaState.resolverColisionBloques(r, ANCHO, ALTO);
+
+                // ── BLOQUES OCULTOS ──
+                mapaState.updateBloquesOcultos(posX, posY, ANCHO, ALTO, velY, dtSub);
+                mapaState.resolverColisionBloquesOcultos(r, ANCHO, ALTO);
+
+                posX = r.posX;
+                posY = r.posY;
+            }
 
             if (r.enPiso) {
                 velY               = 0f;
@@ -204,7 +209,7 @@ public class Jugador implements ActionListener {
             }
             if (r.enTecho) {
                 velY               = 0f;
-                saltandoPresionado = false; // techo corta el salto
+                saltandoPresionado = false;
             }
             if (r.enParedIzq || r.enParedDer) velX = 0f;
         }
@@ -221,10 +226,7 @@ public class Jugador implements ActionListener {
         float centroY = posY + ALTO  / 2f;
 
         Quaternion rot = new Quaternion();
-        rot.fromAngleAxis(
-                anguloRotacion * FastMath.DEG_TO_RAD,
-                Vector3f.UNIT_Z
-        );
+        rot.fromAngleAxis(anguloRotacion * FastMath.DEG_TO_RAD, Vector3f.UNIT_Z);
         nodoNyx.setLocalRotation(rot);
         nodoNyx.setLocalTranslation(centroX, centroY, 2f);
 
@@ -240,9 +242,9 @@ public class Jugador implements ActionListener {
         app.getInputManager().removeListener(this);
     }
 
-    public float getPosX()    { return posX; }
-    public float getPosY()    { return posY; }
-    public float getAncho()   { return ANCHO; }
-    public float getAlto()    { return ALTO; }
-    public boolean isEnPiso() { return enPiso; }
+    public float getPosX()      { return posX;   }
+    public float getPosY()      { return posY;   }
+    public float getAncho()     { return ANCHO;  }
+    public float getAlto()      { return ALTO;   }
+    public boolean isEnPiso()   { return enPiso; }
 }

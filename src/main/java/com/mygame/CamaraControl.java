@@ -24,11 +24,9 @@ public class CamaraControl implements ActionListener {
         this.mapaState = mapaState;
 
         app.getInputManager().addMapping("CamaraIzquierda",
-                new KeyTrigger(KeyInput.KEY_LEFT),
-                new KeyTrigger(KeyInput.KEY_A));
+                new KeyTrigger(KeyInput.KEY_J));
         app.getInputManager().addMapping("CamaraDerecha",
-                new KeyTrigger(KeyInput.KEY_RIGHT),
-                new KeyTrigger(KeyInput.KEY_D));
+                new KeyTrigger(KeyInput.KEY_K));
         app.getInputManager().addMapping("ToggleDebugCamara",
                 new KeyTrigger(KeyInput.KEY_L));
 

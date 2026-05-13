@@ -25,7 +25,6 @@ public class Coordenadas implements ActionListener {
     private boolean modoDebug = false;
     private final float GROSOR = 4f;
 
-    // COLORES PARA CADA SEGMENTO
     private final ColorRGBA[] COLORES_SEGMENTO = {
         ColorRGBA.Green,
         ColorRGBA.Cyan,
@@ -35,13 +34,8 @@ public class Coordenadas implements ActionListener {
         ColorRGBA.White
     };
 
-    // SEGMENTOS CERRADOS
     private ArrayList<ArrayList<Vector2f>> segmentos = new ArrayList<>();
-
-    // SEGMENTO EN PROGRESO
     private ArrayList<Vector2f> segmentoActual = new ArrayList<>();
-
-    // NODOS VISUALES: uno por segmento
     private ArrayList<Node> nodosSegmentos = new ArrayList<>();
     private Node nodoActual = new Node("SegmentoActual");
 
@@ -51,12 +45,6 @@ public class Coordenadas implements ActionListener {
 
         app.getRootNode().attachChild(nodoActual);
 
-        // C      -> ACTIVAR/DESACTIVAR DEBUG
-        // CLICK  -> AGREGAR PUNTO
-        // ENTER  -> CERRAR SEGMENTO Y EMPEZAR NUEVO
-        // Z      -> DESHACER ÚLTIMO PUNTO
-        // ESC    -> CANCELAR SEGMENTO ACTUAL
-        // P      -> IMPRIMIR TODOS LOS SEGMENTOS
         app.getInputManager().addMapping("ModoDebug",     new KeyTrigger(KeyInput.KEY_C));
         app.getInputManager().addMapping("Click",         new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
         app.getInputManager().addMapping("NuevoSegmento", new KeyTrigger(KeyInput.KEY_RETURN));
@@ -79,6 +67,8 @@ public class Coordenadas implements ActionListener {
         // ---- C: ACTIVAR / DESACTIVAR ----
         if (name.equals("ModoDebug")) {
             modoDebug = !modoDebug;
+            // Mostrar cursor en debug, ocultarlo al salir
+            app.getInputManager().setCursorVisible(modoDebug);
             System.out.println("══ Modo Debug: " + (modoDebug ? "ON" : "OFF") + " ══");
             if (modoDebug) imprimirAyuda();
         }
@@ -89,12 +79,6 @@ public class Coordenadas implements ActionListener {
         if (name.equals("Click")) {
 
             Vector2f pantalla = app.getInputManager().getCursorPosition();
-
-            // =================================================
-            // FIX: getCamaraX() ahora devuelve el offsetX real
-            // ya clampeado desde Mapa1State.getOffsetX()
-            // mundoX = screenX + offsetX (borde izq. de cámara)
-            // =================================================
             float offsetX = camaraControl.getCamaraX();
 
             Vector2f mundo = new Vector2f(
@@ -156,8 +140,6 @@ public class Coordenadas implements ActionListener {
             }
 
             segmentoActual.remove(segmentoActual.size() - 1);
-
-            // REDIBUJAR EL SEGMENTO ACTUAL DESDE CERO
             nodoActual.detachAllChildren();
             ColorRGBA color = colorActual();
 
@@ -197,22 +179,11 @@ public class Coordenadas implements ActionListener {
         }
     }
 
-    // =========================
-    // COLOR DEL SEGMENTO ACTUAL
-    // =========================
     private ColorRGBA colorActual() {
-        return COLORES_SEGMENTO[
-            segmentos.size() % COLORES_SEGMENTO.length
-        ];
+        return COLORES_SEGMENTO[segmentos.size() % COLORES_SEGMENTO.length];
     }
 
-    // =========================
-    // DIBUJAR PUNTO
-    // Las coordenadas guardadas son del mundo (mundo.x, mundo.y),
-    // por eso se posiciona directo — el rootNode está en world space.
-    // =========================
     private void dibujarPunto(Vector2f pos, ColorRGBA color, Node nodo) {
-
         Sphere esfera = new Sphere(8, 8, 5);
         Geometry punto = new Geometry("Punto", esfera);
 
@@ -222,24 +193,15 @@ public class Coordenadas implements ActionListener {
         );
         mat.setColor("Color", ColorRGBA.Red);
         punto.setMaterial(mat);
-
-        // pos.x y pos.y ya son coordenadas de mundo → posicionar directo
         punto.setLocalTranslation(pos.x, pos.y, 10f);
-
         nodo.attachChild(punto);
     }
 
-    // =========================
-    // DIBUJAR LÍNEA
-    // Igual que el punto: p1 y p2 son world coords → directo.
-    // =========================
     private void dibujarLinea(Vector2f p1, Vector2f p2,
                               ColorRGBA color, Node nodo) {
-
         float dx  = p2.x - p1.x;
         float dy  = p2.y - p1.y;
         float len = (float) Math.sqrt(dx * dx + dy * dy);
-
         if (len == 0) return;
 
         float px = -(dy / len) * (GROSOR / 2f);
@@ -260,20 +222,15 @@ public class Coordenadas implements ActionListener {
         mesh.updateCounts();
 
         Geometry linea = new Geometry("Linea", mesh);
-
         Material mat = new Material(
                 app.getAssetManager(),
                 "Common/MatDefs/Misc/Unshaded.j3md"
         );
         mat.setColor("Color", color);
         linea.setMaterial(mat);
-
         nodo.attachChild(linea);
     }
 
-    // =========================
-    // IMPRIMIR AYUDA
-    // =========================
     private void imprimirAyuda() {
         System.out.println("  CLICK  → agregar punto");
         System.out.println("  ENTER  → cerrar segmento e iniciar uno nuevo");
@@ -282,11 +239,7 @@ public class Coordenadas implements ActionListener {
         System.out.println("  P      → imprimir todos los segmentos");
     }
 
-    // =========================
-    // IMPRIMIR RESUMEN COMPLETO
-    // =========================
     private void imprimirTodo() {
-
         System.out.println("══════════════════════════════");
         System.out.println("  SEGMENTOS GUARDADOS: " + segmentos.size());
 
@@ -295,10 +248,7 @@ public class Coordenadas implements ActionListener {
             System.out.println("  Segmento " + (i + 1)
                     + "  (" + seg.size() + " puntos):");
             for (Vector2f p : seg) {
-                System.out.println(
-                        "    X: " + (int) p.x
-                        + "  Y: " + (int) p.y
-                );
+                System.out.println("    X: " + (int) p.x + "  Y: " + (int) p.y);
             }
         }
 
@@ -306,24 +256,13 @@ public class Coordenadas implements ActionListener {
             System.out.println("  Segmento en progreso ("
                     + segmentoActual.size() + " puntos):");
             for (Vector2f p : segmentoActual) {
-                System.out.println(
-                        "    X: " + (int) p.x
-                        + "  Y: " + (int) p.y
-                );
+                System.out.println("    X: " + (int) p.x + "  Y: " + (int) p.y);
             }
         }
 
         System.out.println("══════════════════════════════");
     }
 
-    // =========================
-    // GETTERS PARA COLISIONES
-    // =========================
-    public ArrayList<ArrayList<Vector2f>> getSegmentos() {
-        return segmentos;
-    }
-
-    public ArrayList<Vector2f> getSegmentoActual() {
-        return segmentoActual;
-    }
+    public ArrayList<ArrayList<Vector2f>> getSegmentos() { return segmentos; }
+    public ArrayList<Vector2f> getSegmentoActual() { return segmentoActual; }
 }
