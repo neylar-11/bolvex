@@ -2,7 +2,7 @@ package com.mygame;
 
 import com.jme3.app.SimpleApplication;
 
-public class Main extends SimpleApplication {
+public class Main2 extends SimpleApplication {
 
     private Mapa1State    mapaState;
     private CamaraControl camaraControl;
@@ -13,7 +13,7 @@ public class Main extends SimpleApplication {
     private boolean juegoIniciado = false;
 
     public static void main(String[] args) {
-        new Main().start();
+        new Main2().start();
     }
 
     @Override

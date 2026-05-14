@@ -13,13 +13,13 @@ import java.awt.Polygon;
 public class NivelesState extends BaseAppState implements ActionListener {
 
     private SimpleApplication app;
-    private Main              main;
+    private Main2              main;
     private Picture           backgroundNiveles;
     private Polygon           nivel1;
 
     private static final String MAPPING_CLICK_NIVEL = "ClickNivel";
 
-    public NivelesState(Main main) {
+    public NivelesState(Main2 main) {
         this.main = main;
     }
 

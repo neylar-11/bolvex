@@ -12,7 +12,7 @@ import com.jme3.ui.Picture;
 public class MenuState extends BaseAppState {
 
     private SimpleApplication app;
-    private Main              main;   // ← referencia para llamar iniciarJuego()
+    private Main2              main;   // ← referencia para llamar iniciarJuego()
     private Picture           background;
 
     private final Vector2f centroBotonPlay = new Vector2f(771f, 359f);
@@ -34,7 +34,7 @@ public class MenuState extends BaseAppState {
         }
     };
 
-    public MenuState(Main main) {
+    public MenuState(Main2 main) {
         this.main = main;
     }
 
