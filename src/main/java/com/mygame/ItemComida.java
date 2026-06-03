@@ -214,7 +214,7 @@ public class ItemComida {
         fase = Fase.RECOGIDO;
         vivo = false;
         nodo.removeFromParent();
-    }
+    }//
 
     public boolean isVivo()  { return vivo;  }
     public Fase    getFase() { return fase;  }
